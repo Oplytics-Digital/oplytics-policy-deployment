@@ -6,6 +6,7 @@ import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
+import { getPortalUserByOpenId } from "../portalClient";
 import { ENV } from "./env";
 import type {
   ExchangeTokenRequest,
@@ -14,7 +15,21 @@ import type {
   GetUserInfoWithJwtRequest,
   GetUserInfoWithJwtResponse,
 } from "./types/manusTypes";
-// Utility function
+
+/** Map portal role strings to local role enum values */
+function mapPortalRole(portalRole: string): "user" | "admin" | "platform_admin" {
+  switch (portalRole) {
+    case "platform_admin":
+      return "platform_admin";
+    case "enterprise_admin":
+    case "superuser":
+    case "admin":
+      return "admin";
+    default:
+      return "user";
+  }
+}
+
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.length > 0;
 
@@ -32,55 +47,35 @@ class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
     console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
     if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
-      );
+      console.error("[OAuth] ERROR: OAUTH_SERVER_URL is not configured!");
     }
   }
 
   private decodeState(state: string): string {
-    const redirectUri = atob(state);
-    return redirectUri;
+    return atob(state);
   }
 
-  async getTokenByCode(
-    code: string,
-    state: string
-  ): Promise<ExchangeTokenResponse> {
+  async getTokenByCode(code: string, state: string): Promise<ExchangeTokenResponse> {
     const payload: ExchangeTokenRequest = {
       clientId: ENV.appId,
       grantType: "authorization_code",
       code,
       redirectUri: this.decodeState(state),
     };
-
-    const { data } = await this.client.post<ExchangeTokenResponse>(
-      EXCHANGE_TOKEN_PATH,
-      payload
-    );
-
+    const { data } = await this.client.post<ExchangeTokenResponse>(EXCHANGE_TOKEN_PATH, payload);
     return data;
   }
 
-  async getUserInfoByToken(
-    token: ExchangeTokenResponse
-  ): Promise<GetUserInfoResponse> {
-    const { data } = await this.client.post<GetUserInfoResponse>(
-      GET_USER_INFO_PATH,
-      {
-        accessToken: token.accessToken,
-      }
-    );
-
+  async getUserInfoByToken(token: ExchangeTokenResponse): Promise<GetUserInfoResponse> {
+    const { data } = await this.client.post<GetUserInfoResponse>(GET_USER_INFO_PATH, {
+      accessToken: token.accessToken,
+    });
     return data;
   }
 }
 
 const createOAuthHttpClient = (): AxiosInstance =>
-  axios.create({
-    baseURL: ENV.oAuthServerUrl,
-    timeout: AXIOS_TIMEOUT_MS,
-  });
+  axios.create({ baseURL: ENV.oAuthServerUrl, timeout: AXIOS_TIMEOUT_MS });
 
 class SDKServer {
   private readonly client: AxiosInstance;
@@ -91,102 +86,58 @@ class SDKServer {
     this.oauthService = new OAuthService(this.client);
   }
 
-  private deriveLoginMethod(
-    platforms: unknown,
-    fallback: string | null | undefined
-  ): string | null {
+  private deriveLoginMethod(platforms: unknown, fallback: string | null | undefined): string | null {
     if (fallback && fallback.length > 0) return fallback;
     if (!Array.isArray(platforms) || platforms.length === 0) return null;
-    const set = new Set<string>(
-      platforms.filter((p): p is string => typeof p === "string")
-    );
+    const set = new Set<string>(platforms.filter((p): p is string => typeof p === "string"));
     if (set.has("REGISTERED_PLATFORM_EMAIL")) return "email";
     if (set.has("REGISTERED_PLATFORM_GOOGLE")) return "google";
     if (set.has("REGISTERED_PLATFORM_APPLE")) return "apple";
-    if (
-      set.has("REGISTERED_PLATFORM_MICROSOFT") ||
-      set.has("REGISTERED_PLATFORM_AZURE")
-    )
-      return "microsoft";
+    if (set.has("REGISTERED_PLATFORM_MICROSOFT") || set.has("REGISTERED_PLATFORM_AZURE")) return "microsoft";
     if (set.has("REGISTERED_PLATFORM_GITHUB")) return "github";
     const first = Array.from(set)[0];
     return first ? first.toLowerCase() : null;
   }
 
-  /**
-   * Exchange OAuth authorization code for access token
-   * @example
-   * const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-   */
-  async exchangeCodeForToken(
-    code: string,
-    state: string
-  ): Promise<ExchangeTokenResponse> {
+  async exchangeCodeForToken(code: string, state: string): Promise<ExchangeTokenResponse> {
     return this.oauthService.getTokenByCode(code, state);
   }
 
-  /**
-   * Get user information using access token
-   * @example
-   * const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
-   */
   async getUserInfo(accessToken: string): Promise<GetUserInfoResponse> {
-    const data = await this.oauthService.getUserInfoByToken({
-      accessToken,
-    } as ExchangeTokenResponse);
-    const loginMethod = this.deriveLoginMethod(
-      (data as any)?.platforms,
-      (data as any)?.platform ?? data.platform ?? null
-    );
-    return {
-      ...(data as any),
-      platform: loginMethod,
-      loginMethod,
-    } as GetUserInfoResponse;
+    const data = await this.oauthService.getUserInfoByToken({ accessToken } as ExchangeTokenResponse);
+    const loginMethod = this.deriveLoginMethod((data as any)?.platforms, (data as any)?.platform ?? data.platform ?? null);
+    return { ...(data as any), platform: loginMethod, loginMethod } as GetUserInfoResponse;
   }
 
   private parseCookies(cookieHeader: string | undefined) {
-    if (!cookieHeader) {
-      return new Map<string, string>();
-    }
-
+    if (!cookieHeader) return new Map<string, string>();
     const parsed = parseCookieHeader(cookieHeader);
     return new Map(Object.entries(parsed));
   }
 
-  private getSessionSecret() {
-    const secret = ENV.cookieSecret;
+  /**
+   * Portal JWT secret — shared with portal.oplytics.digital for cross-subdomain SSO.
+   */
+  private getPortalSecret() {
+    const secret = ENV.portalJwtSecret;
+    if (!secret) throw new Error("PORTAL_JWT_SECRET is not configured");
     return new TextEncoder().encode(secret);
   }
 
-  /**
-   * Create a session token for a Manus user openId
-   * @example
-   * const sessionToken = await sdk.createSessionToken(userInfo.openId);
-   */
-  async createSessionToken(
-    openId: string,
-    options: { expiresInMs?: number; name?: string } = {}
-  ): Promise<string> {
-    return this.signSession(
-      {
-        openId,
-        appId: ENV.appId,
-        name: options.name || "",
-      },
-      options
-    );
+  /** Local Manus-managed JWT_SECRET for sessions signed by this app. */
+  private getSessionSecret() {
+    return new TextEncoder().encode(ENV.cookieSecret);
   }
 
-  async signSession(
-    payload: SessionPayload,
-    options: { expiresInMs?: number } = {}
-  ): Promise<string> {
+  async createSessionToken(openId: string, options: { expiresInMs?: number; name?: string } = {}): Promise<string> {
+    return this.signSession({ openId, appId: ENV.appId, name: options.name || "" }, options);
+  }
+
+  async signSession(payload: SessionPayload, options: { expiresInMs?: number } = {}): Promise<string> {
     const issuedAt = Date.now();
     const expiresInMs = options.expiresInMs ?? ONE_YEAR_MS;
     const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
     const secretKey = this.getSessionSecret();
-
     return new SignJWT({
       openId: payload.openId,
       appId: payload.appId,
@@ -197,67 +148,62 @@ class SDKServer {
       .sign(secretKey);
   }
 
-  async verifySession(
-    cookieValue: string | undefined | null
-  ): Promise<{ openId: string; appId: string; name: string } | null> {
+  /**
+   * Verify session cookie — tries PORTAL_JWT_SECRET first (cross-subdomain SSO),
+   * then falls back to local JWT_SECRET.
+   */
+  async verifySession(cookieValue: string | undefined | null): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
     }
 
+    // Try portal secret first (cross-subdomain SSO)
+    if (ENV.portalJwtSecret) {
+      try {
+        const portalKey = this.getPortalSecret();
+        const { payload } = await jwtVerify(cookieValue, portalKey, { algorithms: ["HS256"] });
+        const { openId, appId, name } = payload as Record<string, unknown>;
+        if (!isNonEmptyString(openId) || !isNonEmptyString(appId) || !isNonEmptyString(name)) {
+          console.warn("[Auth] Portal JWT payload missing required fields");
+          return null;
+        }
+        return { openId, appId, name };
+      } catch {
+        // Portal secret didn't work — fall through to local secret
+      }
+    }
+
+    // Fallback: local Manus-managed JWT_SECRET
     try {
       const secretKey = this.getSessionSecret();
-      const { payload } = await jwtVerify(cookieValue, secretKey, {
-        algorithms: ["HS256"],
-      });
+      const { payload } = await jwtVerify(cookieValue, secretKey, { algorithms: ["HS256"] });
       const { openId, appId, name } = payload as Record<string, unknown>;
-
-      if (
-        !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
-      ) {
+      if (!isNonEmptyString(openId) || !isNonEmptyString(appId) || !isNonEmptyString(name)) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
       }
-
-      return {
-        openId,
-        appId,
-        name,
-      };
+      return { openId, appId, name };
     } catch (error) {
-      console.warn("[Auth] Session verification failed", String(error));
+      console.warn("[Auth] Session verification failed:", (error as Error).message);
       return null;
     }
   }
 
-  async getUserInfoWithJwt(
-    jwtToken: string
-  ): Promise<GetUserInfoWithJwtResponse> {
-    const payload: GetUserInfoWithJwtRequest = {
-      jwtToken,
-      projectId: ENV.appId,
-    };
-
-    const { data } = await this.client.post<GetUserInfoWithJwtResponse>(
-      GET_USER_INFO_WITH_JWT_PATH,
-      payload
-    );
-
-    const loginMethod = this.deriveLoginMethod(
-      (data as any)?.platforms,
-      (data as any)?.platform ?? data.platform ?? null
-    );
-    return {
-      ...(data as any),
-      platform: loginMethod,
-      loginMethod,
-    } as GetUserInfoWithJwtResponse;
+  async getUserInfoWithJwt(jwtToken: string): Promise<GetUserInfoWithJwtResponse> {
+    const payload: GetUserInfoWithJwtRequest = { jwtToken, projectId: ENV.appId };
+    const { data } = await this.client.post<GetUserInfoWithJwtResponse>(GET_USER_INFO_WITH_JWT_PATH, payload);
+    const loginMethod = this.deriveLoginMethod((data as any)?.platforms, (data as any)?.platform ?? data.platform ?? null);
+    return { ...(data as any), platform: loginMethod, loginMethod } as GetUserInfoWithJwtResponse;
   }
 
+  /**
+   * Authenticate an incoming request.
+   * 1. Verify the session cookie (portal JWT or local JWT).
+   * 2. If user doesn't exist locally, create from portal API or JWT payload.
+   * 3. Backfill enterpriseId for existing users missing it.
+   */
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
@@ -270,21 +216,62 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
+    // Auto-create user from portal API or JWT payload (cross-subdomain SSO)
     if (!user) {
       try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
-        });
-        user = await db.getUserByOpenId(userInfo.openId);
+        const portalUser = await getPortalUserByOpenId(sessionUserId);
+        if (portalUser) {
+          console.log(`[Auth] Cross-subdomain SSO: creating user from portal (${portalUser.email || sessionUserId})`);
+          await db.upsertUser({
+            openId: sessionUserId,
+            name: portalUser.name || session.name || null,
+            email: portalUser.email ?? null,
+            loginMethod: "portal-sso",
+            role: mapPortalRole(portalUser.role),
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(sessionUserId);
+
+          // Set enterpriseId and portalUserId
+          if (user && portalUser.companyId) {
+            const dbInstance = await db.getDb();
+            if (dbInstance) {
+              const { users: usersTable } = await import("../../drizzle/schema");
+              const { eq } = await import("drizzle-orm");
+              await dbInstance.update(usersTable).set({
+                enterpriseId: portalUser.companyId,
+                portalUserId: portalUser.id,
+              }).where(eq(usersTable.id, user.id));
+              user = await db.getUserByOpenId(sessionUserId);
+            }
+          }
+        } else {
+          // Portal API unavailable — create from JWT payload
+          console.log(`[Auth] Cross-subdomain SSO: creating user from JWT payload (${sessionUserId})`);
+          await db.upsertUser({
+            openId: sessionUserId,
+            name: session.name || null,
+            loginMethod: "portal-sso",
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(sessionUserId);
+        }
       } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+        // Last resort: try Manus OAuth
+        try {
+          const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+          await db.upsertUser({
+            openId: userInfo.openId,
+            name: userInfo.name || null,
+            email: userInfo.email ?? null,
+            loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(userInfo.openId);
+        } catch (oauthError) {
+          console.error("[Auth] All user sync methods failed:", error, oauthError);
+          throw ForbiddenError("Failed to sync user info");
+        }
       }
     }
 
@@ -292,11 +279,47 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
+    // Backfill enterpriseId for existing users who have NULL enterpriseId
+    if (user.enterpriseId === null) {
+      try {
+        const portalUser = await getPortalUserByOpenId(user.openId);
+        if (portalUser?.companyId) {
+          console.log(`[Auth] Backfilling enterpriseId=${portalUser.companyId} for user ${user.id}`);
+          const dbInstance = await db.getDb();
+          if (dbInstance) {
+            const { users: usersTable } = await import("../../drizzle/schema");
+            const { eq } = await import("drizzle-orm");
+            await dbInstance.update(usersTable).set({
+              enterpriseId: portalUser.companyId,
+              ...(portalUser.id ? { portalUserId: portalUser.id } : {}),
+            }).where(eq(usersTable.id, user.id));
+            user = (await db.getUserByOpenId(user.openId)) ?? user;
+          }
+        } else {
+          // Fallback: if only one enterprise exists, auto-assign it
+          const dbInstance = await db.getDb();
+          if (dbInstance) {
+            const { sql } = await import("drizzle-orm");
+            const rows = await dbInstance.execute(
+              sql`SELECT DISTINCT enterpriseId FROM users WHERE enterpriseId IS NOT NULL LIMIT 2`
+            );
+            const distinctIds = (rows as any)?.[0] ?? rows;
+            if (Array.isArray(distinctIds) && distinctIds.length === 1 && distinctIds[0]?.enterpriseId) {
+              const soleEnterpriseId = Number(distinctIds[0].enterpriseId);
+              console.log(`[Auth] Auto-assigning sole enterprise (id=${soleEnterpriseId}) to user ${user.id}`);
+              const { users: usersTable } = await import("../../drizzle/schema");
+              const { eq } = await import("drizzle-orm");
+              await dbInstance.update(usersTable).set({ enterpriseId: soleEnterpriseId }).where(eq(usersTable.id, user.id));
+              user = (await db.getUserByOpenId(user.openId)) ?? user;
+            }
+          }
+        }
+      } catch (backfillError) {
+        console.warn(`[Auth] Failed to backfill enterpriseId for user ${user.id}:`, backfillError);
+      }
+    }
 
+    await db.upsertUser({ openId: user.openId, lastSignedIn: signedInAt });
     return user;
   }
 }

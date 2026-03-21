@@ -7,4 +7,8 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // SSO / Portal integration
+  cookieDomain: process.env.COOKIE_DOMAIN ?? "",
+  portalJwtSecret: process.env.PORTAL_JWT_SECRET ?? "",
+  portalUrl: process.env.PORTAL_URL ?? "https://portal.oplytics.digital",
 };
