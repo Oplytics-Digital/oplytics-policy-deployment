@@ -38,3 +38,6 @@
 - [x] Add PORTAL_API_KEY secret for Portal Service API authentication
 - [x] Update portalClient.ts to send X-Service-Key header on every request
 - [x] Port seedPolicy.mjs into standalone project for independent re-seeding
+- [x] Add .github/workflows/ci.yml — pnpm install, pnpm check, pnpm test
+- [x] Set up branch protection on main — require CI to pass before merging (already configured by CEO)
+- [ ] Fix enterprise filter bug — dashboard queries not scoped to selected enterprise

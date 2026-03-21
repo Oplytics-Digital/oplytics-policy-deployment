@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 import { samplePlan, type PolicyPlan, type Correlation } from '@/lib/store';
+import { useHierarchy } from './HierarchyContext';
 
 interface PolicyContextType {
   plan: PolicyPlan;
@@ -104,14 +105,31 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
   const [highlightedIds, setHighlightedIds] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState('xmatrix');
 
-  // Fetch active plans from DB
-  const plansQuery = trpc.policy.listPlans.useQuery(undefined, {
+  // Read the selected enterprise from the hierarchy breadcrumb
+  const hierarchy = useHierarchy();
+  const selectedEnterpriseId = useMemo(() => {
+    try {
+      const selection = hierarchy?.selection;
+      const eid = selection?.enterprise?.id;
+      return eid ? Number(eid) : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [hierarchy?.selection?.enterprise?.id]);
+
+  // Build the enterprise input for queries
+  const enterpriseInput = useMemo(() => {
+    return selectedEnterpriseId ? { enterpriseId: selectedEnterpriseId } : undefined;
+  }, [selectedEnterpriseId]);
+
+  // Fetch active plans from DB — scoped to selected enterprise
+  const plansQuery = trpc.policy.listPlans.useQuery(enterpriseInput, {
     retry: 1,
     staleTime: 30_000,
   });
 
-  // Fetch team members from DB
-  const teamQuery = trpc.policy.listTeamMembers.useQuery(undefined, {
+  // Fetch team members from DB — scoped to selected enterprise
+  const teamQuery = trpc.policy.listTeamMembers.useQuery(enterpriseInput, {
     retry: 1,
     staleTime: 60_000,
   });
@@ -123,9 +141,9 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
     return active?.id ?? plansQuery.data[0]?.id ?? null;
   }, [plansQuery.data]);
 
-  // Fetch full plan data
+  // Fetch full plan data — pass enterpriseId for server-side verification
   const fullPlanQuery = trpc.policy.getFullPlan.useQuery(
-    { planId: activePlanId! },
+    { planId: activePlanId!, enterpriseId: selectedEnterpriseId },
     {
       enabled: activePlanId !== null,
       retry: 1,
@@ -133,9 +151,9 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
     }
   );
 
-  // Fetch bowling entries separately
+  // Fetch bowling entries separately — pass enterpriseId for server-side verification
   const bowlingQuery = trpc.policy.listAllBowlingEntries.useQuery(
-    { planId: activePlanId! },
+    { planId: activePlanId!, enterpriseId: selectedEnterpriseId },
     {
       enabled: activePlanId !== null,
       retry: 1,
