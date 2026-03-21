@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  # ── Policy Deployment ──────────────────────────────────────────────
+  quality-gate:
+    name: Policy Deployment — TypeScript & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        run: npm install -g pnpm@latest
+
+      - name: Configure git credentials for private dependencies
+        run: git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: TypeScript check
+        run: pnpm check
+
+      # Exclude tests that require live env vars (PORTAL_API_KEY, DATABASE_URL)
+      - name: Run unit tests
+        run: |
+          pnpm vitest run \
+            --exclude 'server/portalClient.test.ts'
