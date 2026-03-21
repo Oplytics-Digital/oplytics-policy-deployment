@@ -150,6 +150,28 @@ export async function getEnterpriseHierarchy(enterpriseId: number): Promise<Hier
 }
 
 /**
+ * Get the full flat hierarchy (all enterprises, business units, sites, areas, assets).
+ * Returns the canonical OrgHierarchyData shape expected by the shared-ui hierarchy factory.
+ */
+export async function getFullHierarchy(): Promise<Record<string, unknown> | null> {
+  try {
+    const client = getPortalClient();
+    if (!client) return null;
+    const { data } = await client.get(`/api/service/hierarchy`);
+    return data as Record<string, unknown> ?? null;
+  } catch (error: any) {
+    if (error?.response?.status === 401) {
+      console.error("[PortalClient] 401 Unauthorized — check PORTAL_API_KEY");
+      _keyRevoked = true;
+      _client = null;
+      return null;
+    }
+    console.warn(`[PortalClient] Failed to fetch full hierarchy:`, error?.message);
+    return null;
+  }
+}
+
+/**
  * Get all sites for an enterprise (flat list).
  */
 export async function getEnterpriseSites(enterpriseId: number): Promise<PortalSite[]> {

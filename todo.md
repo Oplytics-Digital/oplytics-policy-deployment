@@ -40,4 +40,6 @@
 - [x] Port seedPolicy.mjs into standalone project for independent re-seeding
 - [x] Add .github/workflows/ci.yml — pnpm install, pnpm check, pnpm test
 - [x] Set up branch protection on main — require CI to pass before merging (already configured by CEO)
-- [ ] Fix enterprise filter bug — dashboard queries not scoped to selected enterprise
+- [x] Fix enterprise filter bug — dashboard queries not scoped to selected enterprise
+- [ ] Add regression test — verify non-admin cannot pass foreign enterpriseId to listPlans
+- [ ] Wire hierarchy data — tRPC endpoint fetching hierarchy from Portal API via portalClient

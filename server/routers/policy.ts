@@ -15,7 +15,7 @@ import { invokeLLM } from "../_core/llm";
 import { desc, eq, inArray } from "drizzle-orm";
 import { metricPushLogs, policyPlans } from "../../drizzle/schema";
 import { getDb } from "../db";
-import { getEnterpriseUsers, getEnterpriseSites } from "../portalClient";
+import { getEnterpriseUsers, getEnterpriseSites, getFullHierarchy } from "../portalClient";
 import {
   createPolicyPlan,
   getPolicyPlan,
@@ -792,6 +792,12 @@ Format your response as a structured list with clear, concise recommendations. E
       return db.select().from(metricPushLogs)
         .orderBy(desc(metricPushLogs.createdAt))
         .limit(limit);
+    }),
+
+  // ─── Hierarchy (from Portal API) ───
+  fullHierarchy: protectedProcedure
+    .query(async () => {
+      return getFullHierarchy();
     }),
 
   // ─── Sites (from Portal API) ───
