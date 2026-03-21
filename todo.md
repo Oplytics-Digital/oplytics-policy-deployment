@@ -33,3 +33,7 @@
 - [x] Zero TypeScript errors
 - [x] Build successful
 - [x] Dashboard visible in browser
+
+## Fixes
+- [x] Add PORTAL_API_KEY secret for Portal Service API authentication
+- [x] Update portalClient.ts to send X-Service-Key header on every request

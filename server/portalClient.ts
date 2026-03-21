@@ -42,18 +42,40 @@ export interface HierarchyNode {
 
 // ─── HTTP Client ───
 
+let _client: ReturnType<typeof axios.create> | null = null;
+let _keyRevoked = false;
+
 function getPortalClient() {
+  if (_keyRevoked) {
+    console.warn("[PortalClient] API key was previously revoked — skipping request");
+    return null;
+  }
+  if (_client) return _client;
+
   const baseURL = ENV.portalUrl;
+  const apiKey = ENV.portalApiKey;
+
   if (!baseURL) {
     console.warn("[PortalClient] PORTAL_URL is not configured");
+    return null;
   }
-  return axios.create({
+
+  _client = axios.create({
     baseURL,
     timeout: AXIOS_TIMEOUT_MS,
     headers: {
       "Content-Type": "application/json",
+      ...(apiKey ? { "X-Service-Key": apiKey } : {}),
     },
   });
+
+  return _client;
+}
+
+/** Reset key revocation flag (e.g., after key rotation) */
+export function resetKeyRevocation(): void {
+  _keyRevoked = false;
+  _client = null;
 }
 
 // ─── User Lookups ───
@@ -65,9 +87,16 @@ function getPortalClient() {
 export async function getPortalUserByOpenId(openId: string): Promise<PortalUser | null> {
   try {
     const client = getPortalClient();
+    if (!client) return null;
     const { data } = await client.get(`/api/service/users/by-open-id/${openId}`);
     return data as PortalUser;
   } catch (error: any) {
+    if (error?.response?.status === 401) {
+      console.error("[PortalClient] 401 Unauthorized — check PORTAL_API_KEY");
+      _keyRevoked = true;
+      _client = null;
+      return null;
+    }
     if (error?.response?.status === 404) return null;
     console.warn(`[PortalClient] Failed to fetch user by openId ${openId}:`, error?.message);
     return null;
@@ -81,9 +110,16 @@ export async function getPortalUserByOpenId(openId: string): Promise<PortalUser 
 export async function getEnterpriseUsers(enterpriseId: number): Promise<PortalUser[]> {
   try {
     const client = getPortalClient();
+    if (!client) return [];
     const { data } = await client.get(`/api/service/enterprises/${enterpriseId}/users`);
     return (data as PortalUser[]) || [];
   } catch (error: any) {
+    if (error?.response?.status === 401) {
+      console.error("[PortalClient] 401 Unauthorized — check PORTAL_API_KEY");
+      _keyRevoked = true;
+      _client = null;
+      return [];
+    }
     console.warn(`[PortalClient] Failed to fetch users for enterprise ${enterpriseId}:`, error?.message);
     return [];
   }
@@ -98,9 +134,16 @@ export async function getEnterpriseUsers(enterpriseId: number): Promise<PortalUs
 export async function getEnterpriseHierarchy(enterpriseId: number): Promise<HierarchyNode[]> {
   try {
     const client = getPortalClient();
+    if (!client) return [];
     const { data } = await client.get(`/api/service/enterprises/${enterpriseId}/hierarchy`);
     return (data as HierarchyNode[]) || [];
   } catch (error: any) {
+    if (error?.response?.status === 401) {
+      console.error("[PortalClient] 401 Unauthorized — check PORTAL_API_KEY");
+      _keyRevoked = true;
+      _client = null;
+      return [];
+    }
     console.warn(`[PortalClient] Failed to fetch hierarchy for enterprise ${enterpriseId}:`, error?.message);
     return [];
   }
@@ -112,9 +155,16 @@ export async function getEnterpriseHierarchy(enterpriseId: number): Promise<Hier
 export async function getEnterpriseSites(enterpriseId: number): Promise<PortalSite[]> {
   try {
     const client = getPortalClient();
+    if (!client) return [];
     const { data } = await client.get(`/api/service/enterprises/${enterpriseId}/sites`);
     return (data as PortalSite[]) || [];
   } catch (error: any) {
+    if (error?.response?.status === 401) {
+      console.error("[PortalClient] 401 Unauthorized — check PORTAL_API_KEY");
+      _keyRevoked = true;
+      _client = null;
+      return [];
+    }
     console.warn(`[PortalClient] Failed to fetch sites for enterprise ${enterpriseId}:`, error?.message);
     return [];
   }
