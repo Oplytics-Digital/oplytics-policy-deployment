@@ -38,3 +38,8 @@
 - [x] Add PORTAL_API_KEY secret for Portal Service API authentication
 - [x] Update portalClient.ts to send X-Service-Key header on every request
 - [x] Port seedPolicy.mjs into standalone project for independent re-seeding
+## X-Matrix Site Filtering (feat/policy-xmatrix-site-filtering)
+- [x] Implement correlation tracing filter in PolicyContext — filter by site/BU from hierarchy breadcrumb
+- [x] Wire Deployments component to breadcrumb siteId via listDeploymentTargetsBySite
+- [x] Write vitest tests for correlation tracing filter logic
+- [ ] Create branch feat/policy-xmatrix-site-filtering, push, create PR
