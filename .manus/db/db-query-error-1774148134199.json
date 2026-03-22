@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, enterprise_id, title, status FROM policy_plans LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3GHiYDqjNwwaaoS.8ae3ddc72ca4 --database LZepY7tL2LzSMn9fyyDMyP --execute SELECT id, enterprise_id, title, status FROM policy_plans LIMIT 10;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'enterprise_id' in 'field list'"
+  ]
+}

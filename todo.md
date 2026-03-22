@@ -46,6 +46,6 @@
 - [x] Fix branch protection check name mismatch (CI / quality → Policy Deployment — TypeScript & Tests)
 - [x] Set SERVICE_API_KEY secret for Portal Service API authentication
 - [x] Update seed script with correct Vita Group site IDs
-- [ ] Rebuild and publish to policydeployment.oplytics.digital
-- [ ] Run seed script against standalone database
-- [ ] Verify hierarchy breadcrumb populates with real Vita Group data
+- [x] Rebuild and publish to policydeployment.oplytics.digital
+- [x] Run seed script against standalone database
+- [x] Verify hierarchy breadcrumb populates with real Vita Group data
