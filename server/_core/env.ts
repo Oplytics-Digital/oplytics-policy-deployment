@@ -11,5 +11,5 @@ export const ENV = {
   cookieDomain: process.env.COOKIE_DOMAIN ?? "",
   portalJwtSecret: process.env.PORTAL_JWT_SECRET ?? "",
   portalUrl: process.env.PORTAL_URL ?? "https://portal.oplytics.digital",
-  portalApiKey: process.env.PORTAL_API_KEY || process.env.SERVICE_API_KEY || "",
+  portalApiKey: process.env.PORTAL_API_KEY ?? "",
 };

@@ -38,14 +38,8 @@
 - [x] Add PORTAL_API_KEY secret for Portal Service API authentication
 - [x] Update portalClient.ts to send X-Service-Key header on every request
 - [x] Port seedPolicy.mjs into standalone project for independent re-seeding
-- [x] Add .github/workflows/ci.yml — pnpm install, pnpm check, pnpm test
-- [x] Set up branch protection on main — require CI to pass before merging
-- [x] Fix enterprise filter bug — dashboard queries not scoped to selected enterprise
-- [x] Add regression test — verify non-admin cannot pass foreign enterpriseId to listPlans
-- [x] Wire hierarchy data — tRPC endpoint fetching hierarchy from Portal API via portalClient
-- [x] Fix branch protection check name mismatch (CI / quality → Policy Deployment — TypeScript & Tests)
-- [x] Set SERVICE_API_KEY secret for Portal Service API authentication
-- [x] Update seed script with correct Vita Group site IDs
-- [x] Rebuild and publish to policydeployment.oplytics.digital
-- [x] Run seed script against standalone database
-- [x] Verify hierarchy breadcrumb populates with real Vita Group data
+## X-Matrix Site Filtering (feat/policy-xmatrix-site-filtering)
+- [x] Implement correlation tracing filter in PolicyContext — filter by site/BU from hierarchy breadcrumb
+- [x] Wire Deployments component to breadcrumb siteId via listDeploymentTargetsBySite
+- [x] Write vitest tests for correlation tracing filter logic
+- [ ] Create branch feat/policy-xmatrix-site-filtering, push, create PR
