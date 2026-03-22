@@ -39,7 +39,13 @@
 - [x] Update portalClient.ts to send X-Service-Key header on every request
 - [x] Port seedPolicy.mjs into standalone project for independent re-seeding
 - [x] Add .github/workflows/ci.yml — pnpm install, pnpm check, pnpm test
-- [x] Set up branch protection on main — require CI to pass before merging (already configured by CEO)
+- [x] Set up branch protection on main — require CI to pass before merging
 - [x] Fix enterprise filter bug — dashboard queries not scoped to selected enterprise
-- [ ] Add regression test — verify non-admin cannot pass foreign enterpriseId to listPlans
-- [ ] Wire hierarchy data — tRPC endpoint fetching hierarchy from Portal API via portalClient
+- [x] Add regression test — verify non-admin cannot pass foreign enterpriseId to listPlans
+- [x] Wire hierarchy data — tRPC endpoint fetching hierarchy from Portal API via portalClient
+- [x] Fix branch protection check name mismatch (CI / quality → Policy Deployment — TypeScript & Tests)
+- [x] Set SERVICE_API_KEY secret for Portal Service API authentication
+- [x] Update seed script with correct Vita Group site IDs
+- [ ] Rebuild and publish to policydeployment.oplytics.digital
+- [ ] Run seed script against standalone database
+- [ ] Verify hierarchy breadcrumb populates with real Vita Group data

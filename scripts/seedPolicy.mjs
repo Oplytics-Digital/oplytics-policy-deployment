@@ -40,11 +40,13 @@ const ENTERPRISE_ID = 1;
 const SITE_IDS = {
   "Vita Middleton": 1,
   "Vita Dukinfield": 2,
-  "Vita Bedford": 3,
-  "Vita Corby": 4,
-  "Draka Interfoam Almelo": 5,
-  "Caligen Foam Essen": 6,
-  "Vita Mattress Poland": 7,
+  "Vita Bedford": 3,       // Not yet in Portal — placeholder
+  "Vita Corby": 4,         // Not yet in Portal — placeholder
+  "Draka Interfoam Almelo": 5,  // Not yet in Portal — placeholder
+  "Caligen Foam Essen": 6,      // Not yet in Portal — placeholder
+  "Vita Mattress Poland": 13,
+  "Vita Mattress Middleton": 10,
+  "Vita Mattress Italy": 11,
 };
 
 async function seed() {
