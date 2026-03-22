@@ -6,6 +6,7 @@
  */
 import { useState, useMemo } from 'react';
 import { usePolicy } from '@/contexts/PolicyContext';
+import { useHierarchy } from '@/contexts/HierarchyContext';
 import { trpc } from '@/lib/trpc';
 import {
   Target,
@@ -599,17 +600,57 @@ function DeploymentCard({ target }: DeploymentCardProps) {
 }
 
 export default function Deployments() {
-  const { planId, isLoading } = usePolicy();
+  const { planId, isLoading, activeSiteIds } = usePolicy();
+  const hierarchy = useHierarchy();
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [filterSite, setFilterSite] = useState<string | null>(null);
   const [groupBy, setGroupBy] = useState<'objective' | 'site' | 'category'>('objective');
 
+  // Determine if we should filter by site from the hierarchy breadcrumb
+  const selectedSiteId = useMemo(() => {
+    try {
+      const sId = hierarchy?.selection?.site?.id;
+      return sId ? Number(sId) : null;
+    } catch {
+      return null;
+    }
+  }, [hierarchy?.selection?.site?.id]);
+
+  // Use listDeploymentTargetsBySite when a specific site is selected,
+  // otherwise fall back to listDeploymentTargets for the full plan
   const deploymentsQuery = trpc.policy.listDeploymentTargets.useQuery(
     { planId: planId! },
-    { enabled: planId !== null }
+    { enabled: planId !== null && activeSiteIds.length === 0 }
   );
 
-  const deployments = deploymentsQuery.data ?? [];
+  const siteDeploymentsQuery = trpc.policy.listDeploymentTargetsBySite.useQuery(
+    { siteId: selectedSiteId! },
+    { enabled: selectedSiteId !== null }
+  );
+
+  // When a BU is selected (multiple sites), fetch all plan targets and filter client-side
+  const isBuSelected = activeSiteIds.length > 1;
+  const buDeploymentsQuery = trpc.policy.listDeploymentTargets.useQuery(
+    { planId: planId! },
+    { enabled: planId !== null && isBuSelected }
+  );
+
+  // Resolve the correct deployment list based on hierarchy selection
+  const deployments = useMemo(() => {
+    if (selectedSiteId && siteDeploymentsQuery.data) {
+      return siteDeploymentsQuery.data;
+    }
+    if (isBuSelected && buDeploymentsQuery.data) {
+      return buDeploymentsQuery.data.filter((d: any) => activeSiteIds.includes(d.siteId));
+    }
+    return deploymentsQuery.data ?? [];
+  }, [
+    selectedSiteId,
+    siteDeploymentsQuery.data,
+    isBuSelected,
+    buDeploymentsQuery.data,
+    activeSiteIds,
+    deploymentsQuery.data,
+  ]);
 
   // Get unique sites and categories for filters
   const sites = useMemo(() => {
@@ -619,13 +660,12 @@ export default function Deployments() {
 
   const categories = ['safety', 'quality', 'delivery', 'cost', 'people'];
 
-  // Filter
+  // Filter (site filter is now handled by hierarchy breadcrumb)
   const filtered = useMemo(() => {
     let result = deployments;
     if (filterCategory) result = result.filter((d: any) => d.sqdcpCategory === filterCategory);
-    if (filterSite) result = result.filter((d: any) => d.siteName === filterSite);
     return result;
-  }, [deployments, filterCategory, filterSite]);
+  }, [deployments, filterCategory]);
 
   // Group
   const grouped = useMemo(() => {
@@ -647,7 +687,9 @@ export default function Deployments() {
     return groups;
   }, [filtered, groupBy]);
 
-  if (isLoading || deploymentsQuery.isLoading) {
+  const anyLoading = deploymentsQuery.isLoading || siteDeploymentsQuery.isLoading || buDeploymentsQuery.isLoading;
+
+  if (isLoading || anyLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#8C34E9' }} />
@@ -721,20 +763,16 @@ export default function Deployments() {
 
         <div className="w-px h-5" style={{ background: '#1e2738' }} />
 
-        {/* Site filter */}
+        {/* Site scope indicator — driven by hierarchy breadcrumb */}
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-semibold uppercase" style={{ color: '#596475' }}>Site:</span>
-          <select
-            value={filterSite ?? ''}
-            onChange={e => setFilterSite(e.target.value || null)}
-            className="rounded px-2 py-1 text-[10px] font-medium"
-            style={{ background: headerBg, color: '#c0c6d0', border: cardBorder }}
-          >
-            <option value="">All Sites</option>
-            {sites.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          <Factory className="w-3 h-3" style={{ color: '#1DB8CE' }} />
+          <span className="text-[10px] font-semibold" style={{ color: activeSiteIds.length > 0 ? '#1DB8CE' : '#596475' }}>
+            {activeSiteIds.length === 0
+              ? 'All Sites'
+              : activeSiteIds.length === 1
+                ? `Site: ${hierarchy?.selection?.site?.name ?? sites[0] ?? 'Selected'}`
+                : `${activeSiteIds.length} sites (${hierarchy?.selection?.businessUnit?.name ?? 'BU'})`}
+          </span>
         </div>
 
         <div className="ml-auto text-xs" style={{ color: '#596475' }}>

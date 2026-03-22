@@ -4,10 +4,17 @@ import { samplePlan, type PolicyPlan, type Correlation } from '@/lib/store';
 import { useHierarchy } from './HierarchyContext';
 
 interface PolicyContextType {
+  /** The full (unfiltered) plan from the DB or sample data */
+  fullPlan: PolicyPlan;
+  /** The plan filtered by the current hierarchy selection (site/BU) */
   plan: PolicyPlan;
   planId: number | null;
   isLoading: boolean;
   isDbBacked: boolean;
+  /** Whether the X-Matrix is currently filtered by a site/BU selection */
+  isFiltered: boolean;
+  /** The selected site IDs used for filtering (empty = no filter) */
+  activeSiteIds: number[];
   setPlan: React.Dispatch<React.SetStateAction<PolicyPlan>>;
   toggleCorrelation: (sourceId: string, targetId: string, quadrant: Correlation['quadrant']) => void;
   highlightedIds: string[];
@@ -100,13 +107,152 @@ function dbToUiPlan(dbPlan: any): PolicyPlan {
   };
 }
 
+/**
+ * Filter a PolicyPlan to only show items connected to the given site IDs
+ * via deployment target → correlation tracing.
+ *
+ * Logic:
+ * 1. Filter deployment targets to those matching the selected siteIds
+ * 2. Extract the objectiveIds (BO IDs) from those targets
+ * 3. Find BOs matching those IDs
+ * 4. Trace correlations: BOs → AOs (via bo-ao), AOs → Projects (via ao-proj),
+ *    Projects → KPIs (via proj-kpi)
+ * 5. Also include KPI→BO correlations for the filtered BOs
+ * 6. Filter bowling chart to only include filtered KPIs
+ */
+export function filterPlanBySiteIds(
+  plan: PolicyPlan,
+  siteIds: number[],
+  deploymentTargets: Array<{ siteId: number; objectiveId: number; objectiveType: string }>,
+): PolicyPlan {
+  if (siteIds.length === 0) return plan;
+
+  // Step 1: Filter deployment targets to selected sites
+  const matchingTargets = deploymentTargets.filter(t => siteIds.includes(t.siteId));
+  if (matchingTargets.length === 0) {
+    // No deployments to these sites — return empty plan structure
+    return {
+      ...plan,
+      breakthroughObjectives: [],
+      annualObjectives: [],
+      projects: [],
+      kpis: [],
+      correlations: [],
+      bowlingChart: [],
+    };
+  }
+
+  // Step 2: Extract BO IDs from deployment targets (objectiveType = 'bo')
+  // Also handle AO-level targets (objectiveType = 'ao')
+  const deployedBoDbIds = new Set<number>();
+  const deployedAoDbIds = new Set<number>();
+  for (const t of matchingTargets) {
+    if (t.objectiveType === 'bo') {
+      deployedBoDbIds.add(t.objectiveId);
+    } else if (t.objectiveType === 'ao') {
+      deployedAoDbIds.add(t.objectiveId);
+    }
+  }
+
+  // Convert DB IDs to UI prefixed IDs
+  const deployedBoIds = new Set<string>(Array.from(deployedBoDbIds).map(id => `bo-${id}`));
+  const deployedAoIdsFromTargets = new Set<string>(Array.from(deployedAoDbIds).map(id => `ao-${id}`));
+
+  // Step 3: Find BOs matching deployed IDs
+  const filteredBos = plan.breakthroughObjectives.filter(bo => deployedBoIds.has(bo.id));
+  const filteredBoIds = new Set(filteredBos.map(bo => bo.id));
+
+  // Step 4: Trace correlations BO → AO (quadrant 'bo-ao')
+  const connectedAoIds = new Set<string>(deployedAoIdsFromTargets);
+  for (const c of plan.correlations) {
+    if (c.quadrant === 'bo-ao' && filteredBoIds.has(c.sourceId)) {
+      connectedAoIds.add(c.targetId);
+    }
+    // Also handle reverse direction (some correlations may be stored either way)
+    if (c.quadrant === 'bo-ao' && filteredBoIds.has(c.targetId)) {
+      connectedAoIds.add(c.sourceId);
+    }
+  }
+
+  // If AO-level targets exist, also trace upward to find their connected BOs
+  if (deployedAoIdsFromTargets.size > 0) {
+    for (const c of plan.correlations) {
+      if (c.quadrant === 'bo-ao') {
+        if (deployedAoIdsFromTargets.has(c.targetId)) {
+          filteredBoIds.add(c.sourceId);
+        }
+        if (deployedAoIdsFromTargets.has(c.sourceId)) {
+          filteredBoIds.add(c.targetId);
+        }
+      }
+    }
+  }
+
+  // Re-filter BOs after adding any traced from AO targets
+  const finalBos = plan.breakthroughObjectives.filter(bo => filteredBoIds.has(bo.id));
+
+  const filteredAos = plan.annualObjectives.filter(ao => connectedAoIds.has(ao.id));
+  const filteredAoIds = new Set(filteredAos.map(ao => ao.id));
+
+  // Step 5: Trace AO → Projects (quadrant 'ao-proj')
+  const connectedProjectIds = new Set<string>();
+  for (const c of plan.correlations) {
+    if (c.quadrant === 'ao-proj' && filteredAoIds.has(c.sourceId)) {
+      connectedProjectIds.add(c.targetId);
+    }
+    if (c.quadrant === 'ao-proj' && filteredAoIds.has(c.targetId)) {
+      connectedProjectIds.add(c.sourceId);
+    }
+  }
+  const filteredProjects = plan.projects.filter(p => connectedProjectIds.has(p.id));
+  const filteredProjectIds = new Set(filteredProjects.map(p => p.id));
+
+  // Step 6: Trace Projects → KPIs (quadrant 'proj-kpi')
+  const connectedKpiIds = new Set<string>();
+  for (const c of plan.correlations) {
+    if (c.quadrant === 'proj-kpi' && filteredProjectIds.has(c.sourceId)) {
+      connectedKpiIds.add(c.targetId);
+    }
+    if (c.quadrant === 'proj-kpi' && filteredProjectIds.has(c.targetId)) {
+      connectedKpiIds.add(c.sourceId);
+    }
+  }
+  const filteredKpis = plan.kpis.filter(k => connectedKpiIds.has(k.id));
+  const filteredKpiIds = new Set(filteredKpis.map(k => k.id));
+
+  // Step 7: Filter correlations to only those between filtered items
+  const allFilteredIds = new Set([
+    ...Array.from(filteredBoIds),
+    ...Array.from(filteredAoIds),
+    ...Array.from(filteredProjectIds),
+    ...Array.from(filteredKpiIds),
+  ]);
+  const filteredCorrelations = plan.correlations.filter(
+    c => allFilteredIds.has(c.sourceId) && allFilteredIds.has(c.targetId)
+  );
+
+  // Step 8: Filter bowling chart to filtered KPIs
+  const filteredBowling = plan.bowlingChart.filter(b => filteredKpiIds.has(b.kpiId));
+
+  return {
+    ...plan,
+    breakthroughObjectives: finalBos,
+    annualObjectives: filteredAos,
+    projects: filteredProjects,
+    kpis: filteredKpis,
+    correlations: filteredCorrelations,
+    bowlingChart: filteredBowling,
+  };
+}
+
 export function PolicyProvider({ children }: { children: React.ReactNode }) {
   const [plan, setPlan] = useState<PolicyPlan>(samplePlan);
   const [highlightedIds, setHighlightedIds] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState('xmatrix');
 
-  // Read the selected enterprise from the hierarchy breadcrumb
+  // Read the selected enterprise, BU, and site from the hierarchy breadcrumb
   const hierarchy = useHierarchy();
+
   const selectedEnterpriseId = useMemo(() => {
     try {
       const selection = hierarchy?.selection;
@@ -116,6 +262,49 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
       return undefined;
     }
   }, [hierarchy?.selection?.enterprise?.id]);
+
+  // Extract selected BU and site from hierarchy
+  const selectedBusinessUnitId = useMemo(() => {
+    try {
+      const buId = hierarchy?.selection?.businessUnit?.id;
+      return buId ? Number(buId) : null;
+    } catch {
+      return null;
+    }
+  }, [hierarchy?.selection?.businessUnit?.id]);
+
+  const selectedSiteId = useMemo(() => {
+    try {
+      const sId = hierarchy?.selection?.site?.id;
+      return sId ? Number(sId) : null;
+    } catch {
+      return null;
+    }
+  }, [hierarchy?.selection?.site?.id]);
+
+  // Get the list of sites filtered by current BU selection from hierarchy context
+  // This gives us all sites within the selected BU
+  const hierarchySites = useMemo(() => {
+    try {
+      return hierarchy?.sites ?? [];
+    } catch {
+      return [];
+    }
+  }, [hierarchy?.sites]);
+
+  // Determine the active site IDs for filtering
+  // - If a specific site is selected → filter to that single site
+  // - If a BU is selected (but no site) → filter to all sites within that BU
+  // - If only enterprise is selected → no filtering (show full X-Matrix)
+  const activeSiteIds = useMemo((): number[] => {
+    if (selectedSiteId) {
+      return [selectedSiteId];
+    }
+    if (selectedBusinessUnitId && hierarchySites.length > 0) {
+      return hierarchySites.map(s => Number(s.id));
+    }
+    return [];
+  }, [selectedSiteId, selectedBusinessUnitId, hierarchySites]);
 
   // Build the enterprise input for queries
   const enterpriseInput = useMemo(() => {
@@ -182,10 +371,28 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [teamQuery.data]);
 
-  const effectivePlan = useMemo(() => {
+  // Full (unfiltered) plan with team members
+  const fullPlan = useMemo(() => {
     const base = dbPlan ?? plan;
     return { ...base, teamMembers: dbTeamMembers };
   }, [dbPlan, plan, dbTeamMembers]);
+
+  // Extract deployment targets from the DB response for correlation tracing
+  const deploymentTargets = useMemo(() => {
+    const raw = fullPlanQuery.data?.deploymentTargets ?? [];
+    return raw.map((t: any) => ({
+      siteId: t.siteId as number,
+      objectiveId: t.objectiveId as number,
+      objectiveType: (t.objectiveType ?? 'bo') as string,
+    }));
+  }, [fullPlanQuery.data?.deploymentTargets]);
+
+  // Apply site/BU filtering via correlation tracing
+  const filteredPlan = useMemo(() => {
+    return filterPlanBySiteIds(fullPlan, activeSiteIds, deploymentTargets);
+  }, [fullPlan, activeSiteIds, deploymentTargets]);
+
+  const isFiltered = activeSiteIds.length > 0;
   const isDbBacked = dbPlan !== null;
   const isLoading = plansQuery.isLoading || fullPlanQuery.isLoading;
 
@@ -257,10 +464,13 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PolicyContext.Provider value={{
-      plan: effectivePlan,
+      fullPlan,
+      plan: filteredPlan,
       planId: activePlanId,
       isLoading,
       isDbBacked,
+      isFiltered,
+      activeSiteIds,
       setPlan,
       toggleCorrelation,
       highlightedIds,
