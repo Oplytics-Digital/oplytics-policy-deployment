@@ -19,23 +19,29 @@ import { test, expect, Page } from "@playwright/test";
 
 /** Navigate breadcrumb to Vita Middleton (Furniture & Bedding → Vita Middleton) */
 async function selectVitaMiddleton(page: Page) {
+  // Scope to the HierarchyNavigator <nav aria-label="Hierarchy navigation">
+  const nav = page.getByLabel("Hierarchy navigation");
+
   // Click "Select Business Unit" in the hierarchy breadcrumb
-  const buPrompt = page.getByText(/select business unit/i);
+  const buPrompt = nav.getByText(/select business unit/i);
   await expect(buPrompt).toBeVisible();
   await buPrompt.click();
 
-  // Select "Furniture & Bedding" BU
-  const buOption = page.getByText(/furniture/i).first();
+  // Select "Furniture & Bedding" from the dropdown menu (renders in a portal,
+  // so we use page-level menuitem role which uniquely targets the dropdown)
+  const buOption = page.getByRole("menuitem", { name: /furniture/i }).first();
   await expect(buOption).toBeVisible();
   await buOption.click();
 
-  // Wait for BU selection to take effect — wait for "Select Site" to appear
-  const sitePrompt = page.getByText(/select site/i);
+  // Wait for BU selection to take effect — "Select Site" appears in the nav
+  const sitePrompt = nav.getByText(/select site/i);
   await expect(sitePrompt).toBeVisible({ timeout: 10_000 });
   await sitePrompt.click();
 
-  // Select "Vita Middleton"
-  const siteOption = page.getByText(/vita middleton/i).first();
+  // Select "Vita Middleton" from the site dropdown
+  const siteOption = page
+    .getByRole("menuitem", { name: /vita middleton/i })
+    .first();
   await expect(siteOption).toBeVisible();
   await siteOption.click();
 
