@@ -56,3 +56,6 @@
 - [x] Update getLoginUrl() in const.ts to use VITE_PORTAL_LOGIN_URL instead of Manus OAuth
 - [x] Set VITE_PORTAL_LOGIN_URL=https://portal.oplytics.digital in sandbox secrets
 - [ ] Zero TS errors, CI green, PR created
+
+## E2E Config Fix (fix/e2e-dirname-esm)
+- [ ] Fix __dirname ReferenceError in playwright.config.ts — use import.meta.url for ESM compatibility

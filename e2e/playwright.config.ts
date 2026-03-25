@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "path";
+import { fileURLToPath } from "url";
 
 /**
  * Playwright E2E config for Oplytics Policy Deployment.
@@ -16,6 +17,8 @@ import path from "path";
 const BASE_URL =
   process.env.E2E_BASE_URL || "https://policydeployment.oplytics.digital";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const authFile = path.join(__dirname, "../playwright/.auth/user.json");
 
 export default defineConfig({
