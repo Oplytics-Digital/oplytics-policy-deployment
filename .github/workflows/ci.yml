@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   # ── Policy Deployment ──────────────────────────────────────────────
-  quality:
+  ci:
     name: Policy Deployment — TypeScript & Tests
     runs-on: ubuntu-latest
     steps:
