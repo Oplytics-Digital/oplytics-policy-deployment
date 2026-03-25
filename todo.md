@@ -56,3 +56,9 @@
 - [x] Update getLoginUrl() in const.ts to use VITE_PORTAL_LOGIN_URL instead of Manus OAuth
 - [x] Set VITE_PORTAL_LOGIN_URL=https://portal.oplytics.digital in sandbox secrets
 - [ ] Zero TS errors, CI green, PR created
+
+## E2E Timeout Fix (fix/e2e-timeout-optimization)
+- [ ] Reduce Playwright test/action/navigation timeouts for faster failure detection
+- [ ] Increase GitHub Actions job timeout to accommodate real-world SSO + live site latency
+- [ ] Optimize test selectors and waits to avoid unnecessary delays
+- [ ] Create PR, request approval

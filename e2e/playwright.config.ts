@@ -25,16 +25,18 @@ export default defineConfig({
   testDir: ".",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: process.env.CI ? "github" : "html",
-  timeout: 60_000,
+  timeout: 45_000,
 
   use: {
     baseURL: BASE_URL,
+    actionTimeout: 10_000,
+    navigationTimeout: 20_000,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    video: "on-first-retry",
+    video: "off",
   },
 
   projects: [
@@ -42,6 +44,7 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: /auth\.setup\.ts/,
+      timeout: 60_000,
     },
 
     /* ── Chromium tests ── */
