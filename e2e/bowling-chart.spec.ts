@@ -28,11 +28,12 @@ test.describe("Bowling Chart", () => {
     await page.goto("/");
     await page.waitForLoadState("domcontentloaded");
 
-    const bowlingLink = page
-      .getByRole("link", { name: /bowling chart/i })
+    // Sidebar items are SidebarMenuButton (buttons), not anchor links
+    const bowlingButton = page
+      .getByRole("button", { name: /bowling chart/i })
       .first();
-    await expect(bowlingLink).toBeVisible();
-    await bowlingLink.click();
+    await expect(bowlingButton).toBeVisible();
+    await bowlingButton.click();
 
     await page.waitForURL(/\/bowling/);
 

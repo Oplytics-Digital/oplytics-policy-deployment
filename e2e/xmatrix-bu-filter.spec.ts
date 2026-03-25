@@ -21,16 +21,22 @@ import { test, expect, Page } from "@playwright/test";
 
 /** Select Furniture & Bedding BU in the hierarchy breadcrumb (stay at BU level) */
 async function selectFurnitureBU(page: Page) {
-  const buPrompt = page.getByText(/select business unit/i);
+  // Scope to the HierarchyNavigator <nav aria-label="Hierarchy navigation">
+  const nav = page.getByLabel("Hierarchy navigation");
+
+  // Click "Select Business Unit" in the hierarchy breadcrumb
+  const buPrompt = nav.getByText(/select business unit/i);
   await expect(buPrompt).toBeVisible();
   await buPrompt.click();
 
-  const buOption = page.getByText(/furniture/i).first();
+  // Select "Furniture & Bedding" from the dropdown menu (renders in a portal,
+  // so we use page-level menuitem role which uniquely targets the dropdown)
+  const buOption = page.getByRole("menuitem", { name: /furniture/i }).first();
   await expect(buOption).toBeVisible();
   await buOption.click();
 
   // Wait for BU filtering to apply — "Select Site" prompt confirms BU is selected
-  await expect(page.getByText(/select site/i)).toBeVisible({ timeout: 10_000 });
+  await expect(nav.getByText(/select site/i)).toBeVisible({ timeout: 10_000 });
 }
 
 test.describe("X-Matrix BU Filtering — Furniture & Bedding", () => {
@@ -73,7 +79,8 @@ test.describe("X-Matrix BU Filtering — Furniture & Bedding", () => {
     await selectFurnitureBU(page);
 
     // At BU level, the "Select Site" prompt should be visible
-    await expect(page.getByText(/select site/i)).toBeVisible();
+    const nav = page.getByLabel("Hierarchy navigation");
+    await expect(nav.getByText(/select site/i)).toBeVisible();
 
     // X-Matrix should show projects from BOTH Middleton and Dukinfield
     await expect(
