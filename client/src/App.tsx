@@ -19,8 +19,8 @@ import PolicyIntegrations from "./pages/policy/PolicyIntegrations";
 
 function Router() {
   return (
-    <PolicyProvider>
-      <PolicyDeploymentLayout>
+    <PolicyDeploymentLayout>
+      <PolicyProvider>
         <Switch>
           <Route path="/" component={PolicyDashboard} />
           <Route path="/xmatrix" component={PolicyXMatrix} />
@@ -32,8 +32,8 @@ function Router() {
           <Route path="/integrations" component={PolicyIntegrations} />
           <Route component={NotFound} />
         </Switch>
-      </PolicyDeploymentLayout>
-    </PolicyProvider>
+      </PolicyProvider>
+    </PolicyDeploymentLayout>
   );
 }
 
