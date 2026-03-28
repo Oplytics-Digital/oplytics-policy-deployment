@@ -35,21 +35,70 @@ const db = drizzle(process.env.DATABASE_URL);
 // Vita Group = 1 in the default seed. Update if your Portal assigns a different ID.
 const ENTERPRISE_ID = 1;
 
-// Site IDs from the Portal Service API (plain ints, no local sites table).
-// Update these to match your Portal's site IDs.
-const SITE_IDS = {
-  "Vita Middleton": 1,
-  "Vita Dukinfield": 2,
-  "Vita Bedford": 3,
-  "Vita Corby": 4,
-  "Draka Interfoam Almelo": 5,
-  "Caligen Foam Essen": 6,
-  "Vita Mattress Poland": 7,
+// Site codes used by the policy seed (stable across re-seeds; IDs are auto-increment).
+// Keyed by display name (used in deploymentTargets.siteName) → portal site code.
+const SITE_CODE_MAP = {
+  "Vita Middleton":         "MID",
+  "Vita Dukinfield":        "DUK",
+  "Vita Bedford":           "BED",
+  "Vita Corby":             "COR",
+  "Draka Interfoam Almelo": "ALM",
+  "Caligen Foam Essen":     "ESS",
+  "Vita Mattress Poland":   "MPL",
 };
+
+/**
+ * Fetch site IDs from the Portal hierarchy API so they always match the live DB.
+ * Uses PORTAL_URL + PORTAL_API_KEY env vars (same as the runtime server).
+ * Returns a map of display name → portal siteId.
+ */
+async function fetchSiteIds() {
+  const portalUrl = process.env.PORTAL_URL;
+  const apiKey = process.env.PORTAL_API_KEY;
+
+  if (!portalUrl) {
+    throw new Error("PORTAL_URL env var is not set. Cannot resolve site IDs from portal.");
+  }
+
+  const url = `${portalUrl}/api/service/hierarchy/enterprises/${ENTERPRISE_ID}/sites`;
+  const headers = { "Content-Type": "application/json" };
+  if (apiKey) headers["X-Service-Key"] = apiKey;
+
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error(`Portal hierarchy API returned ${response.status}: ${await response.text()}`);
+  }
+
+  const allSites = await response.json();
+  // Build a code → id index
+  const codeToId = {};
+  for (const site of allSites) {
+    codeToId[site.code] = site.id;
+  }
+
+  // Resolve each named site via its stable code
+  const siteIds = {};
+  for (const [name, code] of Object.entries(SITE_CODE_MAP)) {
+    const id = codeToId[code];
+    if (!id) throw new Error(`Site with code "${code}" (${name}) not found in portal hierarchy. Has the portal been seeded?`);
+    siteIds[name] = id;
+    console.log(`  Site lookup: "${name}" (${code}) → id=${id}`);
+  }
+
+  return siteIds;
+}
+
+// Resolved at runtime — populated by fetchSiteIds() before seeding
+let SITE_IDS = {};
 
 async function seed() {
   console.log("🌱 Seeding Vita Group policy deployment data...");
   console.log(`  Enterprise ID: ${ENTERPRISE_ID}`);
+
+  // Resolve site IDs from the live portal API
+  console.log("\nResolving site IDs from portal hierarchy API...");
+  SITE_IDS = await fetchSiteIds();
+  console.log();
 
   // 1. Check if plan already exists
   const existingPlans = await db
