@@ -96,7 +96,7 @@ export default function BowlingChart() {
                   {/* Actual row */}
                   <tr>
                     <td className="px-1 py-1 text-center text-[10px] font-semibold" style={{ background: cellBg, border: cellBorder, color: '#596475' }}>
-                      Actual
+                      Act
                     </td>
                     {MONTHS.map((_, mIdx) => {
                       const entry = entries.find(e => e.month === mIdx + 1);

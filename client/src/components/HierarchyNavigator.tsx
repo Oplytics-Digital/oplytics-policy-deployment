@@ -135,27 +135,6 @@ function DrillDownPrompt({
 }) {
   if (nodes.length === 0) return null;
 
-  // Auto-select if only one option
-  if (nodes.length === 1) {
-    return (
-      <div className="flex items-center gap-1">
-        <ChevronRight className={cn("shrink-0 text-[#596475]", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
-        <button
-          onClick={() => onSelect(nodes[0])}
-          className={cn(
-            "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm",
-            "text-[#596475] hover:bg-[#1E2738] hover:text-[#8890A0]",
-            "transition-colors cursor-pointer",
-            compact && "px-1.5 py-0.5 text-xs"
-          )}
-        >
-          <Icon className={cn("shrink-0", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
-          <span className="truncate">{nodes[0].name}</span>
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="flex items-center gap-1">
       <ChevronRight className={cn("shrink-0 text-[#596475]", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
