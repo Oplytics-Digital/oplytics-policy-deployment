@@ -50,23 +50,33 @@ setup("authenticate via Portal SSO", async ({ page }) => {
   const signInButton = page.getByRole("button", { name: /sign in/i });
   await signInButton.click();
 
-  // Detect login errors immediately (portal shows a red banner on 401/403)
+  // Detect login errors immediately (portal shows a red banner on 401/403).
   // Race the error banner against the redirect so we fail fast with a clear message
+  // instead of a generic 15 s TimeoutError.
   const errorBanner = page.locator('div[style*="rgba(239,68,68"]');
   const redirected = page.waitForURL(
     /portal\.oplytics\.digital\/(app|dashboard|services)/,
     { timeout: 15_000 }
   );
-  const errorVisible = errorBanner.waitFor({ state: "visible", timeout: 15_000 }).then(
-    async () => {
-      const msg = (await errorBanner.textContent()) ?? "unknown error";
-      throw new Error(`Portal login rejected — check E2E_USER_EMAIL / E2E_USER_PASSWORD secrets. Server said: "${msg.trim()}"`);
-    },
-    () => { /* no error banner — redirect won */ }
-  );
+  const errorVisible = errorBanner
+    .waitFor({ state: "visible", timeout: 15_000 })
+    .then(
+      async () => {
+        // Capture a screenshot before throwing so the CI artifact shows the exact
+        // error state of the portal login page.
+        fs.mkdirSync("test-results", { recursive: true });
+        await page.screenshot({ path: "test-results/auth-login-failure.png" });
+        const msg = (await errorBanner.textContent()) ?? "unknown error";
+        throw new Error(
+          `Portal login rejected — check E2E_USER_EMAIL / E2E_USER_PASSWORD secrets. ` +
+          `Server said: "${msg.trim()}"`
+        );
+      },
+      () => { /* error banner never appeared — redirect won the race */ }
+    );
 
   // Step 4: Wait for portal to complete login and redirect
-  // After successful login, portal redirects to /app (the service hub)
+  // After successful login, portal does window.location.href = '/app'
   await Promise.race([redirected, errorVisible]);
 
   // Verify we're logged into the portal
