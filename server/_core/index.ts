@@ -1,12 +1,16 @@
 import "dotenv/config";
+import { createHash } from "node:crypto";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import { sql } from "drizzle-orm";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { getDb } from "../db";
+import { ENV } from "./env";
 
 // Build-time constants injected by scripts/build-server.mjs via esbuild `define`.
 // Fall back gracefully in dev (tsx watch) where the globals are not defined.
@@ -45,6 +49,32 @@ async function startServer() {
   // Version endpoint — commit hash and build timestamp baked in at build time
   app.get("/api/version", (_req, res) => {
     res.json({ commit: BUILD_COMMIT, buildTime: BUILD_TIME });
+  });
+
+  // Health endpoint — build info, secret fingerprint, DB connectivity, environment
+  app.get("/api/health", async (_req, res) => {
+    const jwtSecretHash = ENV.portalJwtSecret
+      ? createHash("sha256").update(ENV.portalJwtSecret).digest("hex")
+      : null;
+
+    let db: "ok" | "unavailable" | "error" = "unavailable";
+    try {
+      const conn = await getDb();
+      if (conn) {
+        await conn.execute(sql`SELECT 1`);
+        db = "ok";
+      }
+    } catch {
+      db = "error";
+    }
+
+    res.json({
+      commit: BUILD_COMMIT,
+      buildTime: BUILD_TIME,
+      jwtSecretHash,
+      db,
+      env: process.env.NODE_ENV ?? "unknown",
+    });
   });
 
   // OAuth callback under /api/oauth/callback
