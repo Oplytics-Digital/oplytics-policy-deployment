@@ -8,6 +8,15 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
+// Build-time constants injected by scripts/build-server.mjs via esbuild `define`.
+// Fall back gracefully in dev (tsx watch) where the globals are not defined.
+declare const __GIT_COMMIT__: string;
+declare const __BUILD_TIME__: string;
+const BUILD_COMMIT: string =
+  typeof __GIT_COMMIT__ !== "undefined" ? __GIT_COMMIT__ : "dev";
+const BUILD_TIME: string =
+  typeof __BUILD_TIME__ !== "undefined" ? __BUILD_TIME__ : new Date().toISOString();
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -33,6 +42,11 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Version endpoint — commit hash and build timestamp baked in at build time
+  app.get("/api/version", (_req, res) => {
+    res.json({ commit: BUILD_COMMIT, buildTime: BUILD_TIME });
+  });
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // tRPC API
