@@ -33,6 +33,13 @@ async function selectVitaMiddleton(page: Page) {
   await expect(buOption).toBeVisible();
   await buOption.click();
 
+  // Wait for the BU dropdown to fully close before proceeding.
+  // Radix DismissableLayer briefly suppresses pointer events after a menu closes
+  // to prevent click-through. Without this wait the site dropdown trigger click
+  // lands inside that suppression window and the menu never opens (~53 ms gap
+  // observed in traces from run 23786548344).
+  await expect(buOption).not.toBeVisible();
+
   // Wait for BU selection to take effect — "Select Site" appears in the nav
   const sitePrompt = nav.getByText(/select site/i);
   await expect(sitePrompt).toBeVisible({ timeout: 10_000 });
