@@ -12,7 +12,14 @@
 import { execSync } from "child_process";
 import { build } from "esbuild";
 
-const commit = execSync("git rev-parse --short HEAD").toString().trim();
+let commit = "unknown";
+try {
+  commit = execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+    .toString()
+    .trim();
+} catch {
+  console.warn("build-server: git not available — __GIT_COMMIT__ will be 'unknown'");
+}
 const buildTime = new Date().toISOString();
 
 console.log(`Building server  commit=${commit}  buildTime=${buildTime}`);
