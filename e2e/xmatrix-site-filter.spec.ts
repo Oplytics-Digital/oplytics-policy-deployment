@@ -43,7 +43,22 @@ async function selectVitaMiddleton(page: Page) {
   // Wait for BU selection to take effect — "Select Site" appears in the nav
   const sitePrompt = nav.getByText(/select site/i);
   await expect(sitePrompt).toBeVisible({ timeout: 10_000 });
-  await sitePrompt.click();
+
+  // Use keyboard to open the site dropdown instead of .click().
+  //
+  // Playwright's full .click() sequence fires:
+  //   pointerdown → React opens dropdown → DismissableLayer mounts
+  //   → DismissableLayer's document pointerdown listener captures the trigger
+  //     pointerdown as an "outside" event (React 18 flushes synchronously,
+  //     so the layer is already mounted when the event finishes bubbling)
+  //   → immediate onDismiss → dropdown closes before click even returns
+  //
+  // Keyboard activation (focus + Enter) dispatches only keydown/keypress/keyup
+  // via CDP. No pointer events fire, so DismissableLayer never detects an
+  // outside interaction and the menu stays open.
+  const siteTrigger = nav.locator("button").filter({ hasText: /select site/i });
+  await siteTrigger.focus();
+  await page.keyboard.press("Enter");
 
   // Select "Vita Middleton" from the site dropdown
   const siteOption = page
