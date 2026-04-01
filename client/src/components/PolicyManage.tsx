@@ -27,6 +27,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { type SqdcpPillar } from '@pablo2410/core-server';
 
 const cellBg = '#0e1624';
 const cardBorder = '1px solid #1e2738';
@@ -39,7 +40,7 @@ const categoryOptions = [
   { value: 'quality', label: 'Quality', color: '#3b82f6' },
   { value: 'delivery', label: 'Delivery', color: '#f59e0b' },
   { value: 'cost', label: 'Cost', color: '#10b981' },
-  { value: 'morale', label: 'Morale', color: '#a855f7' },
+  { value: 'people', label: 'People', color: '#a855f7' },
 ];
 
 const sqdcpOptions = [
@@ -108,7 +109,7 @@ function BreakthroughSection({ planId, refetch }: { planId: number; refetch: () 
   const [expanded, setExpanded] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ code: '', description: '', category: 'safety' as 'safety' | 'quality' | 'delivery' | 'cost' | 'morale' });
+  const [form, setForm] = useState({ code: '', description: '', category: 'safety' as SqdcpPillar });
 
   const query = trpc.policy.listBreakthroughObjectives.useQuery({ planId });
   const createMut = trpc.policy.createBreakthroughObjective.useMutation({

@@ -5,6 +5,7 @@
 import { usePolicy } from '@/contexts/PolicyContext';
 import { getCategoryColor } from '@/lib/store';
 import { useCallback, useState } from 'react';
+import { SQDCP_PILLARS, SQDCP_PILLAR_LABELS } from '@pablo2410/core-server';
 
 const cellBorder = '1px solid #1e2738';
 const cellBg = '#0e1624';
@@ -279,18 +280,12 @@ export default function XMatrix() {
           <span className="text-xs" style={{ color: '#596475' }}>Weak correlation</span>
         </div>
         <div className="flex items-center gap-4 ml-auto">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: getCategoryColor('strategic') }} />
-            <span className="text-xs" style={{ color: '#596475' }}>Strategic</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: getCategoryColor('operational') }} />
-            <span className="text-xs" style={{ color: '#596475' }}>Operational</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: getCategoryColor('improvement') }} />
-            <span className="text-xs" style={{ color: '#596475' }}>Improvement</span>
-          </div>
+          {SQDCP_PILLARS.map(pillar => (
+            <div key={pillar} className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: getCategoryColor(pillar) }} />
+              <span className="text-xs" style={{ color: '#596475' }}>{SQDCP_PILLAR_LABELS[pillar]}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -1,11 +1,12 @@
 // Policy Deployment Data Store - Local state management with Vita Group data
 // Policy Deployment data model — Oplytics.Digital platform
+import { SQDCP_PILLAR_COLORS, type SqdcpPillar } from '@pablo2410/core-server';
 
 export interface BreakthroughObjective {
   id: string;
   code: string;
   description: string;
-  category: 'quality' | 'cost' | 'delivery' | 'safety' | 'morale';
+  category: SqdcpPillar;
   color: string;
 }
 
@@ -27,7 +28,7 @@ export interface Project {
   progress: number; // 0-100
   startDate: string;
   endDate: string;
-  category: 'strategic' | 'operational' | 'improvement';
+  category: SqdcpPillar;
 }
 
 export interface KPI {
@@ -97,7 +98,7 @@ export const samplePlan: PolicyPlan = {
     { id: 'bo-2', code: 'BO2', description: 'Achieve zero lost-time incidents across Furniture & Bedding division', category: 'safety', color: '#5B5EA6' },
     { id: 'bo-3', code: 'BO3', description: 'Grow Finished Mattress revenue 25% through new EU market penetration', category: 'delivery', color: '#5B5EA6' },
     { id: 'bo-4', code: 'BO4', description: 'Achieve OEE >85% on all foam-making and cutting lines', category: 'quality', color: '#5B5EA6' },
-    { id: 'bo-5', code: 'BO5', description: 'Build a continuous improvement culture with 80%+ engagement across all BUs', category: 'morale', color: '#5B5EA6' },
+    { id: 'bo-5', code: 'BO5', description: 'Build a continuous improvement culture with 80%+ engagement across all BUs', category: 'people', color: '#5B5EA6' },
   ],
 
   // ─── Annual Objectives (2026 targets) ───
@@ -116,43 +117,43 @@ export const samplePlan: PolicyPlan = {
       id: 'p-1', code: 'P 1.1', name: 'Middleton foam scrap reduction',
       description: 'Root-cause analysis and process parameter optimisation on MID-FM1 and MID-FM2 foam-making machines to reduce off-spec blocks',
       owner: 'Robin Parry', status: 'on-track', progress: 62,
-      startDate: '2026-01-15', endDate: '2026-06-30', category: 'improvement',
+      startDate: '2026-01-15', endDate: '2026-06-30', category: 'cost',
     },
     {
       id: 'p-2', code: 'P 1.2', name: 'Dukinfield conversion line waste mapping',
       description: 'Value-stream mapping of DUK-CV1 and DUK-CV2 conversion lines to identify and eliminate waste in the lamination and bonding process',
       owner: 'James Henderson', status: 'on-track', progress: 45,
-      startDate: '2026-02-01', endDate: '2026-08-31', category: 'improvement',
+      startDate: '2026-02-01', endDate: '2026-08-31', category: 'cost',
     },
     {
       id: 'p-3', code: 'P 1.3', name: 'F&B division safety audit programme',
       description: 'Design and deploy standardised safety audit checklists, near-miss reporting, and monthly review cadence across all 9 Furniture & Bedding sites',
       owner: 'Rachel Attwood', status: 'at-risk', progress: 35,
-      startDate: '2026-01-01', endDate: '2026-12-31', category: 'operational',
+      startDate: '2026-01-01', endDate: '2026-12-31', category: 'safety',
     },
     {
       id: 'p-4', code: 'P 1.4', name: 'Poznan mattress line ramp-up',
       description: 'Commission MPL-ML1 mattress assembly line in Poznan, train local operators, and achieve 80% utilisation within 6 months',
       owner: 'Omar Hoek', status: 'at-risk', progress: 28,
-      startDate: '2026-03-01', endDate: '2026-09-30', category: 'strategic',
+      startDate: '2026-03-01', endDate: '2026-09-30', category: 'delivery',
     },
     {
       id: 'p-5', code: 'P 1.5', name: 'OEE digital rollout — Almelo & Essen',
       description: 'Install OEE sensors and dashboards on ALM-FL1, ALM-CT1, and ESS-FL1 machines; integrate with Oplytics OEE Manager platform',
       owner: 'Markus Westerkamp', status: 'on-track', progress: 55,
-      startDate: '2026-02-01', endDate: '2026-07-31', category: 'strategic',
+      startDate: '2026-02-01', endDate: '2026-07-31', category: 'quality',
     },
     {
       id: 'p-6', code: 'P 1.6', name: 'SMED programme — Bedford & Corby cutting lines',
       description: 'Apply Single-Minute Exchange of Dies methodology to BED-FM1 and COR cutting lines to reduce changeover from 42 min to target 27 min',
       owner: 'Laura Whitfield', status: 'off-track', progress: 18,
-      startDate: '2026-01-15', endDate: '2026-07-31', category: 'improvement',
+      startDate: '2026-01-15', endDate: '2026-07-31', category: 'delivery',
     },
     {
       id: 'p-7', code: 'P 1.7', name: 'Vita CI Academy launch',
       description: 'Develop and deliver continuous improvement training modules (5S, problem solving, standard work) to 200+ operators across all 4 business units',
       owner: 'Cyril Wasem', status: 'on-track', progress: 40,
-      startDate: '2026-02-01', endDate: '2026-11-30', category: 'operational',
+      startDate: '2026-02-01', endDate: '2026-11-30', category: 'people',
     },
   ],
 
@@ -290,19 +291,10 @@ export function getStatusBg(status: string): string {
 }
 
 export function getCategoryColor(category: string): string {
-  switch (category) {
-    case 'strategic': return '#f97316';
-    case 'operational': return '#0d9488';
-    case 'improvement': return '#3b82f6';
-    default: return '#64748b';
-  }
+  return SQDCP_PILLAR_COLORS[category as SqdcpPillar] ?? '#64748b';
 }
 
 export function getCategoryBg(category: string): string {
-  switch (category) {
-    case 'strategic': return 'rgba(249,115,22,0.1)';
-    case 'operational': return 'rgba(13,148,136,0.1)';
-    case 'improvement': return 'rgba(59,130,246,0.1)';
-    default: return 'rgba(100,116,139,0.1)';
-  }
+  const color = SQDCP_PILLAR_COLORS[category as SqdcpPillar];
+  return color ? `${color}1A` : 'rgba(100,116,139,0.1)';
 }
