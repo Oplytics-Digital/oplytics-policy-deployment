@@ -196,7 +196,7 @@ export const policyRouter = router({
       planId: z.number(),
       code: z.string().min(1).max(20),
       description: z.string().min(1),
-      category: z.enum(["safety", "cost", "delivery", "quality", "morale"]),
+      category: z.enum(["safety", "cost", "delivery", "quality", "people"]),
       sortOrder: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -214,7 +214,7 @@ export const policyRouter = router({
       planId: z.number().optional(),
       code: z.string().min(1).max(20).optional(),
       description: z.string().min(1).optional(),
-      category: z.enum(["safety", "cost", "delivery", "quality", "morale"]).optional(),
+      category: z.enum(["safety", "cost", "delivery", "quality", "people"]).optional(),
       sortOrder: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -317,7 +317,7 @@ export const policyRouter = router({
       progress: z.number().min(0).max(100).optional(),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
-      category: z.enum(["strategic", "operational", "improvement"]).optional(),
+      category: z.enum(["safety", "quality", "delivery", "cost", "people"]).optional(),
       sortOrder: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -327,7 +327,7 @@ export const policyRouter = router({
         ...input,
         status: input.status ?? "not-started",
         progress: input.progress ?? 0,
-        category: input.category ?? "improvement",
+        category: input.category ?? "cost",
         sortOrder: input.sortOrder ?? 0,
       });
     }),
@@ -344,7 +344,7 @@ export const policyRouter = router({
       progress: z.number().min(0).max(100).optional(),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
-      category: z.enum(["strategic", "operational", "improvement"]).optional(),
+      category: z.enum(["safety", "quality", "delivery", "cost", "people"]).optional(),
       sortOrder: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
