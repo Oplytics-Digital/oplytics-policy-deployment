@@ -33,7 +33,7 @@ export default function BowlingChart() {
       <div className="px-6 py-3 rounded-t-md" style={{ background: 'linear-gradient(135deg, #8C34E9 0%, #5B1FA6 100%)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-black text-white tracking-wide" style={{ fontFamily: 'Montserrat' }}>Bowler Chart</h2>
+            <h2 className="text-lg font-black text-white tracking-wide" style={{ fontFamily: 'Montserrat' }}>Bowling Chart</h2>
             <p className="text-sm text-white/60">Monthly target vs actual tracking</p>
           </div>
           <div className="text-right text-sm">

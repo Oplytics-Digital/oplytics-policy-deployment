@@ -3,13 +3,13 @@ import { test, expect } from "@playwright/test";
 /**
  * Test 4 — Navigate to Bowling Chart and verify data loads.
  *
- * The Bowling Chart (Bowler Chart) shows monthly plan/actual tracking
+ * The Bowling Chart shows monthly plan/actual tracking
  * for all KPIs. The seeded data includes 84 bowling entries across
  * 7 KPIs (IP1.1 through IP1.7) with 12 months of plan/actual values.
  *
  * Assertions:
  *   - Bowling Chart page loads from sidebar navigation
- *   - Header shows "Bowler Chart" title
+ *   - Header shows "Bowling Chart" title
  *   - Month columns are visible (Jan through Dec)
  *   - KPI names from seeded data are displayed
  *   - Plan/Actual rows exist with numeric values
@@ -37,15 +37,15 @@ test.describe("Bowling Chart", () => {
 
     await page.waitForURL(/\/bowling/);
 
-    await expect(page.getByText(/bowler chart/i).first()).toBeVisible({
+    await expect(page.getByText(/bowling chart/i).first()).toBeVisible({
       timeout: 15_000,
     });
   });
 
-  test("should display the Bowler Chart header with owner info", async ({
+  test("should display the Bowling Chart header with owner info", async ({
     page,
   }) => {
-    await expect(page.getByText(/bowler chart/i).first()).toBeVisible({
+    await expect(page.getByText(/bowling chart/i).first()).toBeVisible({
       timeout: 15_000,
     });
 
@@ -57,7 +57,7 @@ test.describe("Bowling Chart", () => {
   });
 
   test("should display month column headers", async ({ page }) => {
-    await expect(page.getByText(/bowler chart/i).first()).toBeVisible({
+    await expect(page.getByText(/bowling chart/i).first()).toBeVisible({
       timeout: 15_000,
     });
 
@@ -70,7 +70,7 @@ test.describe("Bowling Chart", () => {
   });
 
   test("should display KPI rows with seeded data", async ({ page }) => {
-    await expect(page.getByText(/bowler chart/i).first()).toBeVisible({
+    await expect(page.getByText(/bowling chart/i).first()).toBeVisible({
       timeout: 15_000,
     });
 
@@ -80,7 +80,7 @@ test.describe("Bowling Chart", () => {
   });
 
   test("should show Plan and Actual rows for each KPI", async ({ page }) => {
-    await expect(page.getByText(/bowler chart/i).first()).toBeVisible({
+    await expect(page.getByText(/bowling chart/i).first()).toBeVisible({
       timeout: 15_000,
     });
 
@@ -95,7 +95,7 @@ test.describe("Bowling Chart", () => {
   });
 
   test("should display numeric values in bowling cells", async ({ page }) => {
-    await expect(page.getByText(/bowler chart/i).first()).toBeVisible({
+    await expect(page.getByText(/bowling chart/i).first()).toBeVisible({
       timeout: 15_000,
     });
 
