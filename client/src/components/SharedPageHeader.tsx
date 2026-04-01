@@ -20,7 +20,7 @@ import {
 import { useIsMobile } from "@/hooks/useMobile";
 import HierarchyNavigator from "@/components/HierarchyNavigator";
 import { useHierarchy } from "@/contexts/HierarchyContext";
-import { LogOut, User, Settings, ExternalLink } from "lucide-react";
+import { LogOut, Settings, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -83,13 +83,12 @@ function UserMenu() {
           <p className="text-xs font-medium text-[#E2E8F0] truncate">{user.name}</p>
           <p className="text-[10px] text-[#596475] truncate">{user.email || user.role}</p>
         </div>
-        <DropdownMenuItem className="text-xs text-[#E2E8F0] hover:bg-[#1E2738] cursor-pointer focus:bg-[#1E2738]">
-          <User className="h-3.5 w-3.5 mr-2 text-[#8890A0]" />
-          Profile
-        </DropdownMenuItem>
-        <DropdownMenuItem className="text-xs text-[#E2E8F0] hover:bg-[#1E2738] cursor-pointer focus:bg-[#1E2738]">
+        <DropdownMenuItem
+          onClick={() => { window.location.href = "https://portal.oplytics.digital/account"; }}
+          className="text-xs text-[#E2E8F0] hover:bg-[#1E2738] cursor-pointer focus:bg-[#1E2738]"
+        >
           <Settings className="h-3.5 w-3.5 mr-2 text-[#8890A0]" />
-          Settings
+          User Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-[#1E2738]" />
         <DropdownMenuItem
