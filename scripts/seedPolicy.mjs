@@ -91,6 +91,58 @@ async function fetchSiteIds() {
 // Resolved at runtime — populated by fetchSiteIds() before seeding
 let SITE_IDS = {};
 
+// ---------------------------------------------------------------------------
+// Cross-BU correlation validator
+// Checks every AO→Project correlation to ensure source and target belong to
+// the same business unit. "cross" entries are exempt (enterprise-wide scope).
+// Throws if any violation is found so the seed never silently inserts bad data.
+// ---------------------------------------------------------------------------
+const BU_OF = {
+  ao: {
+    T1: "fb",     // F&B — foam scrap reduction at Middleton & Dukinfield
+    T2: "fb",     // F&B — safety audits across F&B sites
+    T3: "fm",     // Finished Mattress — Poznan line ramp-up
+    T4: "es",     // Engineered Solutions — OEE at Almelo & Essen
+    T5: "fb",     // F&B — changeover reduction at Bedford & Corby
+    T6: "cross",  // Enterprise-wide — CI Academy (all BUs)
+  },
+  project: {
+    "P1.1": "fb",     // F&B — Middleton foam scrap reduction
+    "P1.2": "fb",     // F&B — Dukinfield conversion line waste mapping
+    "P1.3": "fb",     // F&B — division safety audit programme
+    "P1.4": "fm",     // Finished Mattress — Poznan mattress line ramp-up
+    "P1.5": "es",     // ES — OEE digital rollout at Almelo & Essen
+    "P1.6": "fb",     // F&B — SMED at Bedford & Corby cutting lines
+    "P1.7": "cross",  // Enterprise-wide — Vita CI Academy launch
+  },
+};
+
+function validateCrossBuCorrelations(correlations, aoIds, projIds) {
+  const aoCodeById = Object.fromEntries(Object.entries(aoIds).map(([code, id]) => [id, code]));
+  const projCodeById = Object.fromEntries(Object.entries(projIds).map(([code, id]) => [id, code]));
+
+  const violations = [];
+  for (const corr of correlations) {
+    if (corr.sourceType !== "ao" || corr.targetType !== "project") continue;
+    const aoCode = aoCodeById[corr.sourceId];
+    const projCode = projCodeById[corr.targetId];
+    if (!aoCode || !projCode) continue;
+    const aoBu = BU_OF.ao[aoCode];
+    const projBu = BU_OF.project[projCode];
+    if (!aoBu || !projBu) continue;
+    if (aoBu !== "cross" && projBu !== "cross" && aoBu !== projBu) {
+      violations.push(`  AO ${aoCode} (${aoBu.toUpperCase()}) → Project ${projCode} (${projBu.toUpperCase()})`);
+    }
+  }
+
+  if (violations.length > 0) {
+    throw new Error(
+      `Cross-BU correlation violations detected — seed aborted:\n${violations.join("\n")}\n` +
+      `Check that each AO only links to projects within the same business unit.`
+    );
+  }
+}
+
 async function seed() {
   console.log("🌱 Seeding Vita Group policy deployment data...");
   console.log(`  Enterprise ID: ${ENTERPRISE_ID}`);
@@ -225,7 +277,6 @@ async function seed() {
       { sourceId: aoIds["T2"], targetId: projIds["P1.3"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
       { sourceId: aoIds["T3"], targetId: projIds["P1.4"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
       { sourceId: aoIds["T4"], targetId: projIds["P1.5"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
-      { sourceId: aoIds["T4"], targetId: projIds["P1.1"], sourceType: "ao", targetType: "project", strength: "weak", quadrant: "ao-proj" },
       { sourceId: aoIds["T5"], targetId: projIds["P1.6"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
       { sourceId: aoIds["T6"], targetId: projIds["P1.7"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
       // Project ↔ KPI (proj-kpi)
@@ -246,6 +297,8 @@ async function seed() {
       { sourceId: kpiIds["IP1.6"], targetId: boIds["D1"], sourceType: "kpi", targetType: "bo", strength: "strong", quadrant: "kpi-bo" },
       { sourceId: kpiIds["IP1.7"], targetId: boIds["M1"], sourceType: "kpi", targetType: "bo", strength: "strong", quadrant: "kpi-bo" },
     ];
+
+    validateCrossBuCorrelations(correlations, aoIds, projIds);
 
     for (const corr of correlations) {
       await db.insert(policyCorrelations).values({ planId, ...corr });
