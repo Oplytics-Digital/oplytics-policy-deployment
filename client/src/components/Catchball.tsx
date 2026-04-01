@@ -83,6 +83,9 @@ export default function Catchball() {
                     <Target className="w-5 h-5" style={{ color: '#8C34E9' }} />
                     <span className="font-mono text-xs font-bold" style={{ color: '#8C34E9' }}>{bo.code}</span>
                     <span className="text-sm font-semibold text-white">{bo.description}</span>
+                    {linkedAOs.length === 0 && (
+                      <span className="text-xs text-red-400">Cascade required</span>
+                    )}
                     <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded uppercase" style={{ background: 'rgba(140,52,233,0.12)', color: '#8C34E9' }}>
                       {bo.category}
                     </span>
@@ -101,6 +104,9 @@ export default function Catchball() {
                             <Crosshair className="w-4 h-4" style={{ color: '#1DB8CE' }} />
                             <span className="font-mono text-[10px] font-bold" style={{ color: '#1DB8CE' }}>{ao.code}</span>
                             <span className="text-xs font-medium" style={{ color: '#c0c6d0' }}>{ao.description}</span>
+                            {linkedProjects.length === 0 && (
+                              <span className="text-xs text-red-400">Cascade required</span>
+                            )}
                             <div className="w-2 h-2 rounded-full ml-auto" style={{ background: statusColors[ao.status] || '#596475' }} title={ao.status} />
                             <span className="text-[10px]" style={{ color: '#596475' }}>{ao.owner}</span>
                           </div>
