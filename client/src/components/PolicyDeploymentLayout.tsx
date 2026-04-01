@@ -9,13 +9,6 @@
  * This replaces the previous custom sidebar/header that was embedded in Home.tsx.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Avatar, AvatarFallback } from "@pablo2410/shared-ui/primitives";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@pablo2410/shared-ui/primitives";
 import {
   Sidebar,
   SidebarContent,
@@ -42,7 +35,6 @@ import {
   Settings,
   Plug,
   PanelLeft,
-  LogOut,
   ArrowLeft,
   FileStack,
 } from "lucide-react";
@@ -70,7 +62,7 @@ const adminMenuItems = [
 /* ── Layout Component ── */
 
 function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const { toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -82,15 +74,6 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
     [...menuItems, ...adminMenuItems].find((item) =>
       item.path === BASE ? location === BASE : location.startsWith(item.path)
     );
-
-  const initials = user?.name
-    ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "U";
 
   /* ── Report / feedback handlers ── */
   const handleReportSubmit = (data: any) => {
@@ -128,20 +111,6 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
-            {/* Back to Service Hub */}
-            <SidebarMenu className="px-2 py-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => window.location.href = 'https://portal.oplytics.digital/app'}
-                  tooltip="Back to Portal"
-                  className="h-10 transition-all font-normal text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Portal</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-
             {/* Main navigation */}
             <div className="px-4 py-2">
               {!isCollapsed && (
@@ -208,36 +177,30 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
             )}
           </SidebarContent>
 
-          {/* User footer */}
-          <SidebarFooter className="p-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Avatar className="h-9 w-9 border shrink-0">
-                    <AvatarFallback className="text-xs font-medium">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate mt-1.5">
-                      {user?.email || "-"}
-                    </p>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="cursor-pointer text-destructive focus:text-destructive"
+          {/* Footer */}
+          <SidebarFooter className="p-2">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => setLocation("/settings")}
+                  tooltip="Settings"
+                  className="h-10 transition-all font-normal text-muted-foreground hover:text-foreground"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => { window.location.href = "https://portal.oplytics.digital/app"; }}
+                  tooltip="Back to Service Hub"
+                  className="h-10 transition-all font-normal text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Service Hub</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarFooter>
       </Sidebar>
 
