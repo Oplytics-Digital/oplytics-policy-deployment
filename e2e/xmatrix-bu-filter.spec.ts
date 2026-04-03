@@ -15,7 +15,7 @@ import { test, expect, Page } from "@playwright/test";
  * The BU filter should show:
  *   BOs: C1, S1, M1 (NOT D1, Q1)
  *   AOs: T1, T2, T5, T6 (NOT T3, T4)
- *   Projects: P1.1, P1.2, P1.3, P1.6, P1.7 (NOT P1.4, P1.5)
+ *   Projects: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1 (NOT FM-1.1, ES-1.1)
  *   KPIs: IP1.1, IP1.4, IP1.5, IP1.7 (NOT IP1.2, IP1.3, IP1.6)
  */
 
