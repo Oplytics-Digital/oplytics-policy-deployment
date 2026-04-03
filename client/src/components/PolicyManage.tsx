@@ -364,7 +364,7 @@ function ProjectsSection({ planId, refetch }: { planId: number; refetch: () => v
           {showAdd ? (
             <div className="rounded-md p-3 space-y-3" style={{ background: headerBg, border: '1px solid rgba(245,158,11,0.3)' }}>
               <div className="grid grid-cols-4 gap-3">
-                <InputField label="Code" value={form.code} onChange={v => setForm(f => ({ ...f, code: v }))} placeholder="P1.1" />
+                <InputField label="Code" value={form.code} onChange={v => setForm(f => ({ ...f, code: v }))} placeholder="FB-1.1" />
                 <InputField label="Name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Safety audit programme" className="col-span-2" />
                 <InputField label="Owner" value={form.ownerName} onChange={v => setForm(f => ({ ...f, ownerName: v }))} placeholder="Jane Doe" />
               </div>
