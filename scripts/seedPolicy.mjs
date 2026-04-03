@@ -110,10 +110,10 @@ const BU_OF = {
     "FB-1.1": "fb",     // F&B — Middleton foam scrap reduction
     "FB-1.2": "fb",     // F&B — Dukinfield conversion line waste mapping
     "FB-1.3": "fb",     // F&B — division safety audit programme
-    "FM-1.4": "fm",     // Finished Mattress — Poznan mattress line ramp-up
-    "ES-1.5": "es",     // ES — OEE digital rollout at Almelo & Essen
-    "FB-1.6": "fb",     // F&B — SMED at Bedford & Corby cutting lines
-    "ENT-1.7": "cross", // Enterprise-wide — Vita CI Academy launch
+    "FM-1.1": "fm",     // Finished Mattress — Poznan mattress line ramp-up
+    "ES-1.1": "es",     // ES — OEE digital rollout at Almelo & Essen
+    "FB-1.4": "fb",     // F&B — SMED at Bedford & Corby cutting lines
+    "ENT-1.1": "cross", // Enterprise-wide — Vita CI Academy launch
   },
 };
 
@@ -231,10 +231,10 @@ async function seed() {
       { code: "FB-1.1", name: "Middleton foam scrap reduction", description: "Root-cause analysis and process parameter optimisation on MID-FM1 and MID-FM2 foam-making machines to reduce off-spec blocks", ownerName: "Robin Parry", status: "on-track", progress: 62, startDate: "2026-01-15", endDate: "2026-06-30", category: "cost", sortOrder: 1 },
       { code: "FB-1.2", name: "Dukinfield conversion line waste mapping", description: "Value-stream mapping of DUK-CV1 and DUK-CV2 conversion lines to identify and eliminate waste in the lamination and bonding process", ownerName: "James Henderson", status: "on-track", progress: 45, startDate: "2026-02-01", endDate: "2026-08-31", category: "cost", sortOrder: 2 },
       { code: "FB-1.3", name: "F&B division safety audit programme", description: "Design and deploy standardised safety audit checklists, near-miss reporting, and monthly review cadence across all 9 Furniture & Bedding sites", ownerName: "Rachel Attwood", status: "at-risk", progress: 35, startDate: "2026-01-01", endDate: "2026-12-31", category: "safety", sortOrder: 3 },
-      { code: "FM-1.4", name: "Poznan mattress line ramp-up", description: "Commission MPL-ML1 mattress assembly line in Poznan, train local operators, and achieve 80% utilisation within 6 months", ownerName: "Omar Hoek", status: "at-risk", progress: 28, startDate: "2026-03-01", endDate: "2026-09-30", category: "delivery", sortOrder: 4 },
-      { code: "ES-1.5", name: "OEE digital rollout — Almelo & Essen", description: "Install OEE sensors and dashboards on ALM-FL1, ALM-CT1, and ESS-FL1 machines; integrate with Oplytics OEE Manager platform", ownerName: "Markus Westerkamp", status: "on-track", progress: 55, startDate: "2026-02-01", endDate: "2026-07-31", category: "quality", sortOrder: 5 },
-      { code: "FB-1.6", name: "SMED programme — Bedford & Corby cutting lines", description: "Apply Single-Minute Exchange of Dies methodology to BED-FM1 and COR cutting lines to reduce changeover from 42 min to target 27 min", ownerName: "Laura Whitfield", status: "off-track", progress: 18, startDate: "2026-01-15", endDate: "2026-07-31", category: "delivery", sortOrder: 6 },
-      { code: "ENT-1.7", name: "Vita CI Academy launch", description: "Develop and deliver continuous improvement training modules (5S, problem solving, standard work) to 200+ operators across all 4 business units", ownerName: "Cyril Wasem", status: "on-track", progress: 40, startDate: "2026-02-01", endDate: "2026-11-30", category: "people", sortOrder: 7 },
+      { code: "FM-1.1", name: "Poznan mattress line ramp-up", description: "Commission MPL-ML1 mattress assembly line in Poznan, train local operators, and achieve 80% utilisation within 6 months", ownerName: "Omar Hoek", status: "at-risk", progress: 28, startDate: "2026-03-01", endDate: "2026-09-30", category: "delivery", sortOrder: 4 },
+      { code: "ES-1.1", name: "OEE digital rollout — Almelo & Essen", description: "Install OEE sensors and dashboards on ALM-FL1, ALM-CT1, and ESS-FL1 machines; integrate with Oplytics OEE Manager platform", ownerName: "Markus Westerkamp", status: "on-track", progress: 55, startDate: "2026-02-01", endDate: "2026-07-31", category: "quality", sortOrder: 5 },
+      { code: "FB-1.4", name: "SMED programme — Bedford & Corby cutting lines", description: "Apply Single-Minute Exchange of Dies methodology to BED-FM1 and COR cutting lines to reduce changeover from 42 min to target 27 min", ownerName: "Laura Whitfield", status: "off-track", progress: 18, startDate: "2026-01-15", endDate: "2026-07-31", category: "delivery", sortOrder: 6 },
+      { code: "ENT-1.1", name: "Vita CI Academy launch", description: "Develop and deliver continuous improvement training modules (5S, problem solving, standard work) to 200+ operators across all 4 business units", ownerName: "Cyril Wasem", status: "on-track", progress: 40, startDate: "2026-02-01", endDate: "2026-11-30", category: "people", sortOrder: 7 },
     ];
 
     for (const proj of projData) {
@@ -275,19 +275,19 @@ async function seed() {
       { sourceId: aoIds["T1"], targetId: projIds["FB-1.1"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
       { sourceId: aoIds["T1"], targetId: projIds["FB-1.2"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
       { sourceId: aoIds["T2"], targetId: projIds["FB-1.3"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
-      { sourceId: aoIds["T3"], targetId: projIds["FM-1.4"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
-      { sourceId: aoIds["T4"], targetId: projIds["ES-1.5"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
-      { sourceId: aoIds["T5"], targetId: projIds["FB-1.6"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
-      { sourceId: aoIds["T6"], targetId: projIds["ENT-1.7"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
+      { sourceId: aoIds["T3"], targetId: projIds["FM-1.1"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
+      { sourceId: aoIds["T4"], targetId: projIds["ES-1.1"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
+      { sourceId: aoIds["T5"], targetId: projIds["FB-1.4"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
+      { sourceId: aoIds["T6"], targetId: projIds["ENT-1.1"], sourceType: "ao", targetType: "project", strength: "strong", quadrant: "ao-proj" },
       // Project ↔ KPI (proj-kpi)
       { sourceId: projIds["FB-1.1"], targetId: kpiIds["IP1.1"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
       { sourceId: projIds["FB-1.2"], targetId: kpiIds["IP1.1"], sourceType: "project", targetType: "kpi", strength: "weak", quadrant: "proj-kpi" },
       { sourceId: projIds["FB-1.3"], targetId: kpiIds["IP1.4"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
-      { sourceId: projIds["FM-1.4"], targetId: kpiIds["IP1.6"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
-      { sourceId: projIds["FM-1.4"], targetId: kpiIds["IP1.3"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
-      { sourceId: projIds["ES-1.5"], targetId: kpiIds["IP1.2"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
-      { sourceId: projIds["FB-1.6"], targetId: kpiIds["IP1.5"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
-      { sourceId: projIds["ENT-1.7"], targetId: kpiIds["IP1.7"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
+      { sourceId: projIds["FM-1.1"], targetId: kpiIds["IP1.6"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
+      { sourceId: projIds["FM-1.1"], targetId: kpiIds["IP1.3"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
+      { sourceId: projIds["ES-1.1"], targetId: kpiIds["IP1.2"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
+      { sourceId: projIds["FB-1.4"], targetId: kpiIds["IP1.5"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
+      { sourceId: projIds["ENT-1.1"], targetId: kpiIds["IP1.7"], sourceType: "project", targetType: "kpi", strength: "strong", quadrant: "proj-kpi" },
       // KPI ↔ BO (kpi-bo)
       { sourceId: kpiIds["IP1.1"], targetId: boIds["C1"], sourceType: "kpi", targetType: "bo", strength: "strong", quadrant: "kpi-bo" },
       { sourceId: kpiIds["IP1.2"], targetId: boIds["Q1"], sourceType: "kpi", targetType: "bo", strength: "strong", quadrant: "kpi-bo" },

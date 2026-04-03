@@ -253,7 +253,7 @@ const testPlan: PolicyPlan = {
   projects: [
     { id: "p-1", code: "FB-1.1", name: "Middleton scrap reduction", description: "", owner: "Robin", status: "on-track", progress: 62, startDate: "2026-01-15", endDate: "2026-06-30", category: "improvement" },
     { id: "p-3", code: "FB-1.3", name: "Safety audit programme", description: "", owner: "Rachel", status: "at-risk", progress: 35, startDate: "2026-01-01", endDate: "2026-12-31", category: "operational" },
-    { id: "p-4", code: "FM-1.4", name: "Poznan mattress line ramp-up", description: "", owner: "Omar", status: "at-risk", progress: 28, startDate: "2026-03-01", endDate: "2026-09-30", category: "strategic" },
+    { id: "p-4", code: "FM-1.1", name: "Poznan mattress line ramp-up", description: "", owner: "Omar", status: "at-risk", progress: 28, startDate: "2026-03-01", endDate: "2026-09-30", category: "strategic" },
   ],
   kpis: [
     { id: "kpi-1", code: "IP1.1", name: "Foam scrap rate", unit: "%", target: 5.5, current: 7.1, direction: "down", owner: "Robin" },
