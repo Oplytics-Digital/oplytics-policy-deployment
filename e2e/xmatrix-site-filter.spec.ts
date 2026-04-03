@@ -8,12 +8,12 @@ import { test, expect, Page } from "@playwright/test";
  * Correlation tracing chain:
  *   BOs: C1, S1, M1
  *   AOs: T1, T2, T5, T6
- *   Projects: P1.1, P1.2, P1.3, P1.6, P1.7
+ *   Projects: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1
  *   KPIs: IP1.1, IP1.4, IP1.5, IP1.7
  *
  * Items NOT deployed to Middleton:
  *   BOs: D1, Q1
- *   Projects: P1.4 (Poznan), P1.5 (OEE Almelo & Essen)
+ *   Projects: FM-1.1 (Poznan), ES-1.1 (OEE Almelo & Essen)
  *   KPIs: IP1.2 (OEE F&B), IP1.3 (Mattress OTD), IP1.6 (Poznan utilisation)
  */
 
@@ -119,7 +119,7 @@ test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
   test("should show correct projects for Vita Middleton", async ({ page }) => {
     await selectVitaMiddleton(page);
 
-    // Projects visible at Middleton: P1.1, P1.2, P1.3, P1.6, P1.7
+    // Projects visible at Middleton: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1
     await expect(
       page.getByText(/middleton foam scrap reduction/i).first()
     ).toBeVisible();
@@ -136,7 +136,7 @@ test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
 
     await expect(page.getByText(/ci academy launch/i).first()).toBeVisible();
 
-    // Projects NOT visible at Middleton: P1.4, P1.5
+    // Projects NOT visible at Middleton: FM-1.1, ES-1.1
     await expect(page.getByText(/poznan mattress line/i)).not.toBeVisible();
     await expect(page.getByText(/oee digital rollout/i)).not.toBeVisible();
   });
