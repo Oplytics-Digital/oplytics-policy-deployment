@@ -201,7 +201,7 @@ class SDKServer {
    * Authenticate an incoming request.
    * 1. Verify the session cookie (portal JWT or local JWT).
    * 2. If user doesn't exist locally, create from portal API or JWT payload.
-   * 3. Backfill enterpriseId for existing users missing it.
+   * 3. For existing users: re-sync role from portal (and backfill enterpriseId if null).
    */
   async authenticateRequest(req: Request): Promise<User> {
     const cookies = this.parseCookies(req.headers.cookie);
@@ -215,6 +215,7 @@ class SDKServer {
     const sessionUserId = session.openId;
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
+    const isNewUser = !user;
 
     // Auto-create user from portal API or JWT payload (cross-subdomain SSO)
     if (!user) {
@@ -279,24 +280,37 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
-    // Backfill enterpriseId for existing users who have NULL enterpriseId
-    if (user.enterpriseId === null) {
+    // Re-sync role (and backfill enterpriseId if needed) from portal for existing users
+    if (!isNewUser) {
       try {
         const portalUser = await getPortalUserByOpenId(user.openId);
-        if (portalUser?.companyId) {
-          console.log(`[Auth] Backfilling enterpriseId=${portalUser.companyId} for user ${user.id}`);
+        if (portalUser) {
+          const syncedRole = mapPortalRole(portalUser.role);
           const dbInstance = await db.getDb();
           if (dbInstance) {
             const { users: usersTable } = await import("../../drizzle/schema");
             const { eq } = await import("drizzle-orm");
-            await dbInstance.update(usersTable).set({
-              enterpriseId: portalUser.companyId,
-              ...(portalUser.id ? { portalUserId: portalUser.id } : {}),
-            }).where(eq(usersTable.id, user.id));
-            user = (await db.getUserByOpenId(user.openId)) ?? user;
+            const updates: Record<string, unknown> = {};
+
+            if (syncedRole !== user.role) {
+              console.log(`[Auth] Role sync: ${user.role} → ${syncedRole} for user ${user.id}`);
+              updates.role = syncedRole;
+            }
+            if (user.enterpriseId === null && portalUser.companyId) {
+              console.log(`[Auth] Backfilling enterpriseId=${portalUser.companyId} for user ${user.id}`);
+              updates.enterpriseId = portalUser.companyId;
+            }
+            if (!user.portalUserId && portalUser.id) {
+              updates.portalUserId = portalUser.id;
+            }
+
+            if (Object.keys(updates).length > 0) {
+              await dbInstance.update(usersTable).set(updates).where(eq(usersTable.id, user.id));
+              user = (await db.getUserByOpenId(user.openId)) ?? user;
+            }
           }
-        } else {
-          // Fallback: if only one enterprise exists, auto-assign it
+        } else if (user.enterpriseId === null) {
+          // Portal unavailable — fallback: auto-assign if only one enterprise exists
           const dbInstance = await db.getDb();
           if (dbInstance) {
             const { sql } = await import("drizzle-orm");
@@ -314,8 +328,8 @@ class SDKServer {
             }
           }
         }
-      } catch (backfillError) {
-        console.warn(`[Auth] Failed to backfill enterpriseId for user ${user.id}:`, backfillError);
+      } catch (syncError) {
+        console.warn(`[Auth] Failed to sync user ${user.id} from portal:`, syncError);
       }
     }
 
