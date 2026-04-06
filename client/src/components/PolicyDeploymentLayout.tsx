@@ -67,8 +67,7 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
   const { toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const isAdmin =
-    
-    user?.role === "platform_admin";
+    user?.role === "admin" || user?.role === "platform_admin";
 
   const activeMenuItem =
     [...menuItems, ...adminMenuItems].find((item) =>
