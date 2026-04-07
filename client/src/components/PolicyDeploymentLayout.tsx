@@ -69,11 +69,6 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
   const isAdmin =
     user?.role === "admin" || user?.role === "platform_admin";
 
-  const activeMenuItem =
-    [...menuItems, ...adminMenuItems].find((item) =>
-      item.path === BASE ? location === BASE : location.startsWith(item.path)
-    );
-
   /* ── Report / feedback handlers ── */
   const handleReportSubmit = (data: any) => {
     toast.success(`${data.type} report submitted`, {
@@ -209,8 +204,6 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
 
       <SidebarInset>
         <SharedPageHeader
-          serviceName={activeMenuItem?.label ?? "Policy Deployment"}
-          serviceIcon={<FileStack className="h-4 w-4" />}
           showHierarchy={true}
           hierarchyMaxDepth={5}
           showSidebarTrigger={true}
