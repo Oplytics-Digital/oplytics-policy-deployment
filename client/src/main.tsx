@@ -40,7 +40,7 @@ queryClient.getMutationCache().subscribe(event => {
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "https://portal.oplytics.digital/api/trpc",
+      url: import.meta.env.VITE_PORTAL_TRPC_URL ?? "https://portal.oplytics.digital/api/trpc",
       transformer: superjson,
       fetch(input, init) {
         return globalThis.fetch(input, {
