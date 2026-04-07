@@ -2,7 +2,7 @@
  * HierarchyContext — Org hierarchy for the standalone Policy Deployment app.
  *
  * Uses the shared createOrgHierarchyContext factory from @pablo2410/shared-ui/hierarchy.
- * Data source: Portal Service API via the policy.fullHierarchy tRPC endpoint.
+ * Data source: Portal tRPC hierarchy.flat endpoint (direct, no local proxy).
  *
  * Auto-selection: On first load (no sessionStorage), seeds the selection with
  * Vita Group so the dashboard loads with data immediately.
@@ -48,7 +48,9 @@ ensureDefaultSelection();
 const { OrgHierarchyProvider, useOrgHierarchy } = createOrgHierarchyContext({
   storageKey: STORAGE_KEY,
   useHierarchyData: () => {
-    const { data, isLoading } = trpc.policy.fullHierarchy.useQuery(undefined, {
+    // TODO(phase-3): remove any cast once tRPC versions are aligned (policy-dep@11.6, portal@11.13)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, isLoading } = (trpc as any).hierarchy.flat.useQuery(undefined, {
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000,

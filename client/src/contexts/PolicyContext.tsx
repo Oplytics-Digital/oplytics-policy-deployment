@@ -317,9 +317,11 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
     staleTime: 30_000,
   });
 
-  // Fetch team members from DB — scoped to selected enterprise
-  const teamQuery = trpc.policy.listTeamMembers.useQuery(enterpriseInput, {
-    retry: 1,
+  // Fetch team members from portal — admin/enterprise_admin only; non-admins fall back to samplePlan.teamMembers
+  // TODO(phase-3): remove any cast once tRPC versions are aligned (policy-dep@11.6, portal@11.13)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const teamQuery = (trpc as any).userManagement.list.useQuery(undefined, {
+    retry: 0,
     staleTime: 60_000,
   });
 
@@ -365,9 +367,9 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
     if (!teamQuery.data || teamQuery.data.length === 0) return samplePlan.teamMembers;
     return teamQuery.data.map((u: any) => ({
       id: `tm-${u.id}`,
-      name: u.name,
+      name: u.name ?? "Unknown",
       role: u.role,
-      department: u.department,
+      department: u.enterprise ?? "",
     }));
   }, [teamQuery.data]);
 
