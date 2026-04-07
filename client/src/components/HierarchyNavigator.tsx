@@ -2,8 +2,8 @@
  * HierarchyNavigator — breadcrumb-style hierarchy switcher.
  *
  * Displays: Enterprise / BU / Site / Area / Asset
- * Each level is a clickable dropdown to switch context.
- * Platform admins can switch enterprises; others see their scoped enterprise.
+ * Enterprise is always static or click-to-reset (never a dropdown).
+ * BU and below show dropdowns when multiple options are available.
  *
  * Oplytics dark theme: #0A0E1A bg, #8C34E9 accent, #E2E8F0 text, #8890A0 muted
  */
@@ -48,8 +48,31 @@ function BreadcrumbLevel({
 
   if (!selected) return null;
 
-  // If only one option or can't switch, show as static text
+  // If only one option or switching is disabled for this level:
+  // — when a child IS selected (!isLast), render as a clickable button to reset to this scope.
+  // — when this is the terminal level, render as static text.
   if (!hasMultiple || !canSwitch) {
+    if (!isLast) {
+      return (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => config.onSelect(selected)}
+            className={cn(
+              "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm",
+              "text-[#E2E8F0] hover:bg-[#1E2738] hover:text-white",
+              "transition-colors cursor-pointer outline-none",
+              "focus-visible:ring-1 focus-visible:ring-[#8C34E9]",
+              compact && "px-1.5 py-0.5 text-xs"
+            )}
+          >
+            <Icon className={cn("shrink-0 text-[#8890A0]", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
+            <span className="truncate max-w-[120px]">{selected.name}</span>
+          </button>
+          <ChevronRight className={cn("shrink-0 text-[#596475]", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-1">
         <div
@@ -62,9 +85,6 @@ function BreadcrumbLevel({
           <Icon className={cn("shrink-0 text-[#8890A0]", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
           <span className="truncate max-w-[120px]">{selected.name}</span>
         </div>
-        {!isLast && (
-          <ChevronRight className={cn("shrink-0 text-[#596475]", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
-        )}
       </div>
     );
   }
@@ -214,7 +234,7 @@ export default function HierarchyNavigator({
       getNodes: () => ctx.enterprises,
       getSelected: () => ctx.selection.enterprise,
       onSelect: ctx.selectEnterprise,
-      canSwitch: ctx.canSwitchEnterprise,
+      canSwitch: false,
     },
     {
       key: "businessUnit",

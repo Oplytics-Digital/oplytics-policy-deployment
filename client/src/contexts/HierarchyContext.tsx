@@ -8,7 +8,6 @@
  * Vita Group so the dashboard loads with data immediately.
  */
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
 import {
   createOrgHierarchyContext,
   type OrgHierarchyData,
@@ -61,11 +60,8 @@ const { OrgHierarchyProvider, useOrgHierarchy } = createOrgHierarchyContext({
 /* ── Wrapper provider ── */
 
 function HierarchyProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const canSwitchEnterprise = (user?.role as string) === "platform_admin";
-
   return (
-    <OrgHierarchyProvider canSwitchEnterprise={canSwitchEnterprise}>
+    <OrgHierarchyProvider canSwitchEnterprise={false}>
       {children}
     </OrgHierarchyProvider>
   );
