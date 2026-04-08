@@ -215,7 +215,7 @@ function DashboardLayoutContent({
                       {user?.name || "-"}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
-                      {user?.role || "-"}
+                      {user?.email || "-"}
                     </p>
                   </div>
                 </button>

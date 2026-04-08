@@ -525,9 +525,7 @@ function DeploymentTargetsSection({ planId, refetch }: { planId: number; refetch
   const query = trpc.policy.listDeploymentTargets.useQuery({ planId });
   const bosQuery = trpc.policy.listBreakthroughObjectives.useQuery({ planId });
   const aosQuery = trpc.policy.listAnnualObjectives.useQuery({ planId });
-  // TODO(phase-3): remove any cast once tRPC versions are aligned (policy-dep@11.6, portal@11.13)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sitesQuery = (trpc as any).hierarchy.sites.useQuery(undefined);
+  const sitesQuery = trpc.policy.listSites.useQuery(undefined);
 
   const [form, setForm] = useState({
     objectiveId: '',
