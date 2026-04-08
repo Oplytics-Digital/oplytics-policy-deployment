@@ -16,18 +16,18 @@ import type {
   GetUserInfoWithJwtResponse,
 } from "./types/manusTypes";
 
-/** Map portal role strings to local role enum values */
-function mapPortalRole(portalRole: string): "user" | "admin" | "platform_admin" {
-  switch (portalRole) {
-    case "platform_admin":
-      return "platform_admin";
-    case "enterprise_admin":
-    case "superuser":
-    case "admin":
-      return "admin";
-    default:
-      return "user";
-  }
+export type SessionUserRole =
+  | "platform_admin"
+  | "enterprise_admin"
+  | "superuser"
+  | "bu_user"
+  | "site_user"
+  | "area_user"
+  | "asset_user";
+
+/** Pass the portal role through unchanged */
+function mapPortalRole(portalRole: string): SessionUserRole {
+  return portalRole as SessionUserRole;
 }
 
 const isNonEmptyString = (value: unknown): value is string =>
