@@ -461,7 +461,7 @@ function TestPushSection({ planId }: { planId: number | null }) {
 
 export default function IntegrationDashboard() {
   const { user } = useAuth();
-  const isSuperuser = user?.role === 'platform_admin' || user?.role === 'admin';
+  const isSuperuser = user?.role === 'platform_admin' || user?.role === 'enterprise_admin';
   const plansQuery = trpc.policy.listPlans.useQuery(undefined, { enabled: isSuperuser });
   const activePlanId = plansQuery.data?.find((p: any) => p.status === 'active')?.id ?? plansQuery.data?.[0]?.id ?? null;
 

@@ -708,7 +708,7 @@ export default function PolicyManage() {
   const { planId, isLoading, refetch } = usePolicy();
   const { user } = useAuth();
 
-  const isSuperuser = user?.role === 'platform_admin' || user?.role === 'admin';
+  const isSuperuser = user?.role === 'platform_admin' || user?.role === 'enterprise_admin';
 
   if (isLoading) {
     return (

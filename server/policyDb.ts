@@ -384,7 +384,7 @@ export async function deleteDeploymentMetric(id: number) {
   await db.delete(deploymentMetrics).where(eq(deploymentMetrics.id, id));
 }
 
-export async function auditMetric(id: number, auditedValue: string, auditedById: number, auditedByName: string) {
+export async function auditMetric(id: number, auditedValue: string, auditedById: number | null, auditedByName: string) {
   const db = await requireDb();
   await db.update(deploymentMetrics).set({
     auditedValue,
