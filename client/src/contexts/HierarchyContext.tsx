@@ -2,12 +2,13 @@
  * HierarchyContext — Org hierarchy for the standalone Policy Deployment app.
  *
  * Uses the shared createOrgHierarchyContext factory from @pablo2410/shared-ui/hierarchy.
- * Data source: Portal tRPC hierarchy.flat endpoint (direct, no local proxy).
+ * Data source: Portal Service API via the policy.fullHierarchy tRPC endpoint.
  *
  * Auto-selection: On first load (no sessionStorage), seeds the selection with
  * Vita Group so the dashboard loads with data immediately.
  */
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import {
   createOrgHierarchyContext,
   type OrgHierarchyData,
@@ -48,9 +49,7 @@ ensureDefaultSelection();
 const { OrgHierarchyProvider, useOrgHierarchy } = createOrgHierarchyContext({
   storageKey: STORAGE_KEY,
   useHierarchyData: () => {
-    // TODO(phase-3): remove any cast once tRPC versions are aligned (policy-dep@11.6, portal@11.13)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, isLoading } = (trpc as any).hierarchy.flat.useQuery(undefined, {
+    const { data, isLoading } = trpc.policy.fullHierarchy.useQuery(undefined, {
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000,
@@ -62,8 +61,11 @@ const { OrgHierarchyProvider, useOrgHierarchy } = createOrgHierarchyContext({
 /* ── Wrapper provider ── */
 
 function HierarchyProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const canSwitchEnterprise = (user?.role as string) === "platform_admin";
+
   return (
-    <OrgHierarchyProvider canSwitchEnterprise={false}>
+    <OrgHierarchyProvider canSwitchEnterprise={canSwitchEnterprise}>
       {children}
     </OrgHierarchyProvider>
   );
