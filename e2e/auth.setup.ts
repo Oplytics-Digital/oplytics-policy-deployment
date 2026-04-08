@@ -88,7 +88,23 @@ setup("authenticate via Portal SSO", async ({ page }) => {
   await page.goto("https://policydeployment.oplytics.digital/");
   await page.waitForLoadState("networkidle");
 
-  // Step 6: Verify we landed on the authenticated dashboard
+  // Step 6: Decode and log the app_session_id cookie payload so we can inspect
+  // what claims the portal JWT actually contains (role, enterpriseId, etc.)
+  const cookies = await page.context().cookies("https://policydeployment.oplytics.digital");
+  const sessionCookie = cookies.find(c => c.name === "app_session_id");
+  if (sessionCookie) {
+    try {
+      const [, payloadB64] = sessionCookie.value.split(".");
+      const decoded = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
+      console.log("[JWT claims]", JSON.stringify(decoded, null, 2));
+    } catch (e) {
+      console.warn("[JWT claims] Failed to decode cookie:", e);
+    }
+  } else {
+    console.warn("[JWT claims] app_session_id cookie not found");
+  }
+
+  // Step 7: Verify we landed on the authenticated dashboard
   // The dashboard should show policy deployment content (not the "Sign in" prompt)
   await expect(
     page.getByText(/vita group|policy deployment|x-matrix|dashboard/i).first()
