@@ -60,15 +60,10 @@ async function selectVitaMiddleton(page: Page) {
   await siteTrigger.focus();
   await page.keyboard.press("Enter");
 
-  // Wait for the site dropdown to finish its initial render before interacting.
-  // Radix DropdownMenu re-renders the menu content once after mount (as the
-  // site list resolves), briefly detaching and replacing menu items. Waiting
-  // for the Vita Middleton item to reach a stable 'attached' state ensures we
-  // click the settled node rather than the ephemeral first-paint node.
+  // Select "Vita Middleton" from the site dropdown
   const siteOption = page
     .getByRole("menuitem", { name: /vita middleton/i })
     .first();
-  await siteOption.waitFor({ state: "attached" });
   await expect(siteOption).toBeVisible();
   await siteOption.click();
 
