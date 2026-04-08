@@ -172,8 +172,8 @@ class SDKServer {
       try {
         const portalKey = this.getPortalSecret();
         const { payload } = await jwtVerify(cookieValue, portalKey, { algorithms: ["HS256"] });
-        const { openId, appId, name } = payload as Record<string, unknown>;
-        if (!isNonEmptyString(openId) || !isNonEmptyString(appId) || !isNonEmptyString(name)) {
+        const { openId } = payload as Record<string, unknown>;
+        if (!isNonEmptyString(openId)) {
           console.warn("[Auth] Portal JWT payload missing required fields");
           return null;
         }
