@@ -4,20 +4,27 @@ import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
-import type { User } from "../../drizzle/schema";
-import * as db from "../db";
-import { getPortalUserByOpenId } from "../portalClient";
 import { ENV } from "./env";
 import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
   GetUserInfoResponse,
-  GetUserInfoWithJwtRequest,
-  GetUserInfoWithJwtResponse,
 } from "./types/manusTypes";
 
-/** Map portal role strings to local role enum values */
-function mapPortalRole(portalRole: string): "user" | "admin" | "platform_admin" {
+/**
+ * Authenticated user derived purely from JWT claims.
+ * Portal PR #13 embeds role and enterpriseId in the session token, eliminating
+ * the need for any local database lookup on authenticated requests.
+ */
+export type SessionUser = {
+  openId: string;
+  name: string;
+  role: "user" | "admin" | "platform_admin";
+  enterpriseId: number | null;
+};
+
+/** Map portal role strings to the local role enum values used throughout this app */
+function mapPortalRole(portalRole: string): SessionUser["role"] {
   switch (portalRole) {
     case "platform_admin":
       return "platform_admin";
@@ -41,7 +48,6 @@ export type SessionPayload = {
 
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
-const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
@@ -151,8 +157,11 @@ class SDKServer {
   /**
    * Verify session cookie — tries PORTAL_JWT_SECRET first (cross-subdomain SSO),
    * then falls back to local JWT_SECRET.
+   *
+   * Returns all available claims from the token payload, including role and
+   * enterpriseId embedded by portal PR #13.
    */
-  async verifySession(cookieValue: string | undefined | null): Promise<{ openId: string; appId: string; name: string } | null> {
+  async verifySession(cookieValue: string | undefined | null): Promise<Record<string, unknown> | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
@@ -168,7 +177,7 @@ class SDKServer {
           console.warn("[Auth] Portal JWT payload missing required fields");
           return null;
         }
-        return { openId, appId, name };
+        return payload as Record<string, unknown>;
       } catch {
         // Portal secret didn't work — fall through to local secret
       }
@@ -183,158 +192,41 @@ class SDKServer {
         console.warn("[Auth] Session payload missing required fields");
         return null;
       }
-      return { openId, appId, name };
+      return payload as Record<string, unknown>;
     } catch (error) {
       console.warn("[Auth] Session verification failed:", (error as Error).message);
       return null;
     }
   }
 
-  async getUserInfoWithJwt(jwtToken: string): Promise<GetUserInfoWithJwtResponse> {
-    const payload: GetUserInfoWithJwtRequest = { jwtToken, projectId: ENV.appId };
-    const { data } = await this.client.post<GetUserInfoWithJwtResponse>(GET_USER_INFO_WITH_JWT_PATH, payload);
-    const loginMethod = this.deriveLoginMethod((data as any)?.platforms, (data as any)?.platform ?? data.platform ?? null);
-    return { ...(data as any), platform: loginMethod, loginMethod } as GetUserInfoWithJwtResponse;
-  }
-
   /**
    * Authenticate an incoming request.
-   * 1. Verify the session cookie (portal JWT or local JWT).
-   * 2. If user doesn't exist locally, create from portal API or JWT payload.
-   * 3. For existing users: re-sync role from portal (and backfill enterpriseId if null).
+   *
+   * Stateless — reads openId, name, role, and enterpriseId directly from the
+   * verified JWT claims. Portal PR #13 embeds role and enterpriseId in the
+   * session token, so no database lookup is required.
    */
-  async authenticateRequest(req: Request): Promise<User> {
+  async authenticateRequest(req: Request): Promise<SessionUser> {
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
+    const payload = await this.verifySession(sessionCookie);
 
-    if (!session) {
+    if (!payload) {
       throw ForbiddenError("Invalid session cookie");
     }
 
-    const sessionUserId = session.openId;
-    const signedInAt = new Date();
-    let user = await db.getUserByOpenId(sessionUserId);
-    const isNewUser = !user;
+    const { openId, name, role, enterpriseId } = payload as Record<string, unknown>;
 
-    // Auto-create user from portal API or JWT payload (cross-subdomain SSO)
-    if (!user) {
-      try {
-        const portalUser = await getPortalUserByOpenId(sessionUserId);
-        if (portalUser) {
-          console.log(`[Auth] Cross-subdomain SSO: creating user from portal (${portalUser.email || sessionUserId})`);
-          await db.upsertUser({
-            openId: sessionUserId,
-            name: portalUser.name || session.name || null,
-            email: portalUser.email ?? null,
-            loginMethod: "portal-sso",
-            role: mapPortalRole(portalUser.role),
-            lastSignedIn: signedInAt,
-          });
-          user = await db.getUserByOpenId(sessionUserId);
-
-          // Set enterpriseId and portalUserId
-          if (user && portalUser.companyId) {
-            const dbInstance = await db.getDb();
-            if (dbInstance) {
-              const { users: usersTable } = await import("../../drizzle/schema");
-              const { eq } = await import("drizzle-orm");
-              await dbInstance.update(usersTable).set({
-                enterpriseId: portalUser.companyId,
-                portalUserId: portalUser.id,
-              }).where(eq(usersTable.id, user.id));
-              user = await db.getUserByOpenId(sessionUserId);
-            }
-          }
-        } else {
-          // Portal API unavailable — create from JWT payload
-          console.log(`[Auth] Cross-subdomain SSO: creating user from JWT payload (${sessionUserId})`);
-          await db.upsertUser({
-            openId: sessionUserId,
-            name: session.name || null,
-            loginMethod: "portal-sso",
-            lastSignedIn: signedInAt,
-          });
-          user = await db.getUserByOpenId(sessionUserId);
-        }
-      } catch (error) {
-        // Last resort: try Manus OAuth
-        try {
-          const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-          await db.upsertUser({
-            openId: userInfo.openId,
-            name: userInfo.name || null,
-            email: userInfo.email ?? null,
-            loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-            lastSignedIn: signedInAt,
-          });
-          user = await db.getUserByOpenId(userInfo.openId);
-        } catch (oauthError) {
-          console.error("[Auth] All user sync methods failed:", error, oauthError);
-          throw ForbiddenError("Failed to sync user info");
-        }
-      }
+    if (!isNonEmptyString(openId)) {
+      throw ForbiddenError("Invalid session: missing openId");
     }
 
-    if (!user) {
-      throw ForbiddenError("User not found");
-    }
-
-    // Re-sync role (and backfill enterpriseId if needed) from portal for existing users
-    if (!isNewUser) {
-      try {
-        const portalUser = await getPortalUserByOpenId(user.openId);
-        if (portalUser) {
-          const syncedRole = mapPortalRole(portalUser.role);
-          const dbInstance = await db.getDb();
-          if (dbInstance) {
-            const { users: usersTable } = await import("../../drizzle/schema");
-            const { eq } = await import("drizzle-orm");
-            const updates: Record<string, unknown> = {};
-
-            if (syncedRole !== user.role) {
-              console.log(`[Auth] Role sync: ${user.role} → ${syncedRole} for user ${user.id}`);
-              updates.role = syncedRole;
-            }
-            if (user.enterpriseId === null && portalUser.companyId) {
-              console.log(`[Auth] Backfilling enterpriseId=${portalUser.companyId} for user ${user.id}`);
-              updates.enterpriseId = portalUser.companyId;
-            }
-            if (!user.portalUserId && portalUser.id) {
-              updates.portalUserId = portalUser.id;
-            }
-
-            if (Object.keys(updates).length > 0) {
-              await dbInstance.update(usersTable).set(updates).where(eq(usersTable.id, user.id));
-              user = (await db.getUserByOpenId(user.openId)) ?? user;
-            }
-          }
-        } else if (user.enterpriseId === null) {
-          // Portal unavailable — fallback: auto-assign if only one enterprise exists
-          const dbInstance = await db.getDb();
-          if (dbInstance) {
-            const { sql } = await import("drizzle-orm");
-            const rows = await dbInstance.execute(
-              sql`SELECT DISTINCT enterpriseId FROM users WHERE enterpriseId IS NOT NULL LIMIT 2`
-            );
-            const distinctIds = (rows as any)?.[0] ?? rows;
-            if (Array.isArray(distinctIds) && distinctIds.length === 1 && distinctIds[0]?.enterpriseId) {
-              const soleEnterpriseId = Number(distinctIds[0].enterpriseId);
-              console.log(`[Auth] Auto-assigning sole enterprise (id=${soleEnterpriseId}) to user ${user.id}`);
-              const { users: usersTable } = await import("../../drizzle/schema");
-              const { eq } = await import("drizzle-orm");
-              await dbInstance.update(usersTable).set({ enterpriseId: soleEnterpriseId }).where(eq(usersTable.id, user.id));
-              user = (await db.getUserByOpenId(user.openId)) ?? user;
-            }
-          }
-        }
-      } catch (syncError) {
-        console.warn(`[Auth] Failed to sync user ${user.id} from portal:`, syncError);
-      }
-    }
-
-    await db.upsertUser({ openId: user.openId, lastSignedIn: signedInAt });
-    return user;
+    return {
+      openId,
+      name: isNonEmptyString(name) ? name : "",
+      role: mapPortalRole(isNonEmptyString(role) ? role : "user"),
+      enterpriseId: typeof enterpriseId === "number" ? enterpriseId : null,
+    };
   }
 }
 
