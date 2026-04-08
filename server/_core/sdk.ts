@@ -26,8 +26,8 @@ export type SessionUserRole =
   | "asset_user";
 
 /** Pass the portal role through unchanged */
-function mapPortalRole(portalRole: string): string {
-  return portalRole;
+function mapPortalRole(portalRole: string): SessionUserRole {
+  return portalRole as SessionUserRole;
 }
 
 const isNonEmptyString = (value: unknown): value is string =>
