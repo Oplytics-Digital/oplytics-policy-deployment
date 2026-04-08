@@ -150,7 +150,6 @@ export const policyRouter = router({
       return createPolicyPlan({
         ...input,
         enterpriseId,
-        ownerId: ctx.user.id,
         level: input.level ?? "enterprise",
         status: input.status ?? "draft",
       });
@@ -612,7 +611,6 @@ export const policyRouter = router({
       return createDeploymentAudit({
         ...input,
         auditDate: new Date(input.auditDate),
-        auditedById: ctx.user.id,
         auditedByName: ctx.user.name ?? "Unknown",
       });
     }),
@@ -678,7 +676,7 @@ export const policyRouter = router({
       auditedValue: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
-      await auditMetric(input.id, input.auditedValue, ctx.user.id, ctx.user.name ?? "Unknown");
+      await auditMetric(input.id, input.auditedValue, null, ctx.user.name ?? "Unknown");
       return { success: true };
     }),
 

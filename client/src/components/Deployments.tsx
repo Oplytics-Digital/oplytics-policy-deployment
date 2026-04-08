@@ -35,7 +35,7 @@ import { useAuth } from '@/_core/hooks/useAuth';
 
 function MetricProgress({ deploymentTargetId, targetValue, unit }: { deploymentTargetId: number; targetValue: string | null; unit: string }) {
   const { user } = useAuth();
-  const isSuperuser = user?.role === 'platform_admin' || user?.role === 'admin';
+  const isSuperuser = user?.role === 'platform_admin' || user?.role === 'enterprise_admin';
   const [showAddForm, setShowAddForm] = useState(false);
   const [auditingId, setAuditingId] = useState<number | null>(null);
   const [auditValue, setAuditValue] = useState('');
