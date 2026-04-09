@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal } from "drizzle-orm/mysql-core";
+import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal } from "drizzle-orm/mysql-core";
 
 // ─── Policy Plans ───
 
@@ -53,6 +53,8 @@ export const annualObjectives = mysqlTable("annual_objectives", {
   code: varchar("code", { length: 20 }).notNull(),
   description: text("description").notNull(),
   ownerId: int("ownerId"),
+  cascadeScope: mysqlEnum("cascadeScope", ["enterprise", "bu", "site", "area", "asset"]).default("enterprise").notNull(),
+  scopeEntityIds: json("scopeEntityIds").$type<number[]>(),
   ownerName: varchar("ownerName", { length: 255 }),
   status: mysqlEnum("aoStatus", ["on-track", "at-risk", "off-track", "not-started", "completed"]).default("not-started").notNull(),
   sortOrder: int("sortOrder").default(0).notNull(),
