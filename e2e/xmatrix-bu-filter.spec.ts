@@ -1,17 +1,16 @@
 import { test, expect, Page } from "@playwright/test";
 
 /**
- * Test 3 — Select UK & Ireland BU in hierarchy breadcrumb,
+ * Test 3 — Select Furniture & Bedding BU in hierarchy breadcrumb,
  * verify X-Matrix shows the union of all objectives deployed to sites in that BU.
  *
- * Live enterprise: Lincoln Electric (LEE)
- * UK & Ireland BU (LEE-UKI) contains:
- *   - Sheffield (LEE-SHF): C1, S1, M1 deployed
- *   - Wigan     (LEE-WGN): C1, S1 deployed
+ * Furniture & Bedding BU contains:
+ *   - Vita Middleton (siteId=1): C1, S1, M1 deployed
+ *   - Vita Dukinfield (siteId=2): C1, S1 deployed
  *
  * Union of BOs across both sites: C1, S1, M1
  * This is broader than a single site but narrower than the full enterprise
- * (which includes D1, Q1 deployed to Continental Europe sites).
+ * (which includes D1, Q1 deployed to other BUs).
  *
  * The BU filter should show:
  *   BOs: C1, S1, M1 (NOT D1, Q1)
@@ -20,8 +19,8 @@ import { test, expect, Page } from "@playwright/test";
  *   KPIs: IP1.1, IP1.4, IP1.5, IP1.7 (NOT IP1.2, IP1.3, IP1.6)
  */
 
-/** Select UK & Ireland BU in the hierarchy breadcrumb (stay at BU level) */
-async function selectUKIrelandBU(page: Page) {
+/** Select Furniture & Bedding BU in the hierarchy breadcrumb (stay at BU level) */
+async function selectFurnitureBU(page: Page) {
   // Scope to the HierarchyNavigator <nav aria-label="Hierarchy navigation">
   const nav = page.getByLabel("Hierarchy navigation");
 
@@ -42,9 +41,9 @@ async function selectUKIrelandBU(page: Page) {
   await buTrigger.focus();
   await page.keyboard.press("Enter");
 
-  // Select "UK & Ireland" from the dropdown menu (renders in a portal,
+  // Select "Furniture & Bedding" from the dropdown menu (renders in a portal,
   // so we use page-level menuitem role which uniquely targets the dropdown)
-  const buOption = page.getByRole("menuitem", { name: /UK.*Ireland/i }).first();
+  const buOption = page.getByRole("menuitem", { name: /furniture/i }).first();
   await expect(buOption).toBeVisible();
   await buOption.click();
 
@@ -52,7 +51,7 @@ async function selectUKIrelandBU(page: Page) {
   await expect(nav.getByText(/select site/i)).toBeVisible({ timeout: 10_000 });
 }
 
-test.describe("X-Matrix BU Filtering — UK & Ireland", () => {
+test.describe("X-Matrix BU Filtering — Furniture & Bedding", () => {
   test.beforeEach(async ({ page }) => {
     // Clear sessionStorage before each test so no persisted hierarchy selection
     // bleeds in from a previous test run.
@@ -67,12 +66,12 @@ test.describe("X-Matrix BU Filtering — UK & Ireland", () => {
     });
   });
 
-  test("should filter X-Matrix to BU scope when UK & Ireland is selected", async ({
+  test("should filter X-Matrix to BU scope when Furniture & Bedding is selected", async ({
     page,
   }) => {
-    await selectUKIrelandBU(page);
+    await selectFurnitureBU(page);
 
-    // Verify BOs that SHOULD be visible (deployed to UK & Ireland sites)
+    // Verify BOs that SHOULD be visible (deployed to F&B sites)
     await expect(
       page.getByText(/reduce.*manufacturing waste/i).first()
     ).toBeVisible({ timeout: 10_000 });
@@ -85,7 +84,7 @@ test.describe("X-Matrix BU Filtering — UK & Ireland", () => {
       page.getByText(/continuous improvement culture/i).first()
     ).toBeVisible();
 
-    // Verify BOs that should NOT be visible (deployed to Continental Europe only)
+    // Verify BOs that should NOT be visible (deployed to other BUs only)
     await expect(page.getByText(/grow.*mattress revenue/i)).not.toBeVisible();
     await expect(page.getByText(/achieve oee/i)).not.toBeVisible();
   });
@@ -93,13 +92,13 @@ test.describe("X-Matrix BU Filtering — UK & Ireland", () => {
   test("should show broader results than single site when BU is selected", async ({
     page,
   }) => {
-    await selectUKIrelandBU(page);
+    await selectFurnitureBU(page);
 
     // At BU level, the "Select Site" prompt should be visible
     const nav = page.getByLabel("Hierarchy navigation");
     await expect(nav.getByText(/select site/i)).toBeVisible();
 
-    // X-Matrix should show projects from BOTH Sheffield and Wigan
+    // X-Matrix should show projects from BOTH Middleton and Dukinfield
     await expect(
       page.getByText(/middleton foam scrap reduction/i).first()
     ).toBeVisible({ timeout: 10_000 });
@@ -108,7 +107,7 @@ test.describe("X-Matrix BU Filtering — UK & Ireland", () => {
       page.getByText(/dukinfield conversion line/i).first()
     ).toBeVisible();
 
-    // But NOT projects from Continental Europe BU
+    // But NOT projects from other BUs
     await expect(page.getByText(/poznan mattress line/i)).not.toBeVisible();
     await expect(page.getByText(/oee digital rollout/i)).not.toBeVisible();
   });
@@ -116,7 +115,7 @@ test.describe("X-Matrix BU Filtering — UK & Ireland", () => {
   test("should return to full enterprise view when BU is deselected", async ({
     page,
   }) => {
-    await selectUKIrelandBU(page);
+    await selectFurnitureBU(page);
 
     // Verify D1 is NOT visible at BU level
     await expect(page.getByText(/grow.*mattress revenue/i)).not.toBeVisible();

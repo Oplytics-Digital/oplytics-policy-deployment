@@ -37,15 +37,14 @@ const ENTERPRISE_ID = 1;
 
 // Site codes used by the policy seed (stable across re-seeds; IDs are auto-increment).
 // Keyed by display name (used in deploymentTargets.siteName) → portal site code.
-//
-// Lincoln Electric Europe hierarchy (from portal seed-lincoln.mjs):
-//   UK & Ireland (LEE-UKI): Sheffield (LEE-SHF), Wigan (LEE-WGN)
-//   Continental Europe (LEE-CE): Bester Poland (LEE-BST), Kaynak Turkey (LEE-KYN)
 const SITE_CODE_MAP = {
-  "Sheffield":       "LEE-SHF",   // UK & Ireland — primary UK site
-  "Wigan":           "LEE-WGN",   // UK & Ireland — secondary UK site
-  "Bester Poland":   "LEE-BST",   // Continental Europe — Poland facility
-  "Kaynak Turkey":   "LEE-KYN",   // Continental Europe — Turkey facility
+  "Vita Middleton":         "MID",
+  "Vita Dukinfield":        "DUK",
+  "Vita Bedford":           "BED",
+  "Vita Corby":             "COR",
+  "Draka Interfoam Almelo": "ALM",
+  "Caligen Foam Essen":     "ESS",
+  "Vita Mattress Poland":   "MPL",
 };
 
 /**
@@ -387,19 +386,21 @@ async function seed() {
     console.log(`  Deployment targets already exist (${existingDeps.length}). Skipping.`);
   } else {
     const deployments = [
-      // C1 → Cost deployments (UK & Ireland sites)
-      { objectiveId: boIds["C1"], objectiveType: "bo", objectiveCode: "C1", siteId: SITE_IDS["Sheffield"], siteName: "Sheffield", sqdcpCategory: "cost", deploymentTitle: "Reduce cost per Kg — foam scrap reduction", deploymentDescription: "Target 5.5% scrap rate through process parameter optimisation at Sheffield wire drawing lines", targetMetric: "Foam scrap rate", targetValue: "5.50", currentValue: "7.10", unit: "%", status: "active" },
-      { objectiveId: boIds["C1"], objectiveType: "bo", objectiveCode: "C1", siteId: SITE_IDS["Wigan"], siteName: "Wigan", sqdcpCategory: "cost", deploymentTitle: "Reduce conversion waste — flux core production", deploymentDescription: "Value-stream mapping to eliminate waste in Wigan flux core production lines", targetMetric: "Conversion waste rate", targetValue: "3.00", currentValue: "5.20", unit: "%", status: "active" },
-      // S1 → Safety deployments (UK & Ireland sites)
-      { objectiveId: boIds["S1"], objectiveType: "bo", objectiveCode: "S1", siteId: SITE_IDS["Sheffield"], siteName: "Sheffield", sqdcpCategory: "safety", deploymentTitle: "Reduce incidents — standardised safety audits", deploymentDescription: "Deploy safety audit checklists and near-miss reporting at Sheffield site", targetMetric: "Lost-time incidents", targetValue: "0.00", currentValue: "1.00", unit: "incidents", status: "deployed" },
-      { objectiveId: boIds["S1"], objectiveType: "bo", objectiveCode: "S1", siteId: SITE_IDS["Wigan"], siteName: "Wigan", sqdcpCategory: "safety", deploymentTitle: "Reduce incidents — safety audit programme", deploymentDescription: "Standardised safety audits and monthly review cadence at Wigan", targetMetric: "Lost-time incidents", targetValue: "0.00", currentValue: "1.00", unit: "incidents", status: "deployed" },
-      // D1 → Delivery deployments (Continental Europe)
-      { objectiveId: boIds["D1"], objectiveType: "bo", objectiveCode: "D1", siteId: SITE_IDS["Bester Poland"], siteName: "Bester Poland", sqdcpCategory: "delivery", deploymentTitle: "Ramp up mattress production to full capacity", deploymentDescription: "Commission MPL-ML1 assembly line at Bester Poland and achieve 80% utilisation", targetMetric: "Line utilisation", targetValue: "80.00", currentValue: "34.00", unit: "%", status: "active" },
-      // Q1 → Quality deployments (Continental Europe)
-      { objectiveId: boIds["Q1"], objectiveType: "bo", objectiveCode: "Q1", siteId: SITE_IDS["Bester Poland"], siteName: "Bester Poland", sqdcpCategory: "quality", deploymentTitle: "OEE digital rollout — foam-making lines", deploymentDescription: "Install OEE sensors and dashboards on production lines at Bester Poland", targetMetric: "OEE", targetValue: "85.00", currentValue: "72.40", unit: "%", status: "active" },
-      { objectiveId: boIds["Q1"], objectiveType: "bo", objectiveCode: "Q1", siteId: SITE_IDS["Kaynak Turkey"], siteName: "Kaynak Turkey", sqdcpCategory: "quality", deploymentTitle: "OEE digital rollout — electrode lines", deploymentDescription: "Install OEE sensors and dashboards at Kaynak Turkey electrode production", targetMetric: "OEE", targetValue: "85.00", currentValue: "68.00", unit: "%", status: "deployed" },
-      // M1 → People deployments (UK & Ireland — Sheffield only)
-      { objectiveId: boIds["M1"], objectiveType: "bo", objectiveCode: "M1", siteId: SITE_IDS["Sheffield"], siteName: "Sheffield", sqdcpCategory: "people", deploymentTitle: "CI Academy — operator training programme", deploymentDescription: "Deliver 5S, problem solving, and standard work training modules at Sheffield", targetMetric: "Operators trained", targetValue: "30.00", currentValue: "12.00", unit: "people", status: "active" },
+      // C1 → Cost deployments
+      { objectiveId: boIds["C1"], objectiveType: "bo", objectiveCode: "C1", siteId: SITE_IDS["Vita Middleton"], siteName: "Vita Middleton", sqdcpCategory: "cost", deploymentTitle: "Reduce cost per Kg — foam scrap reduction", deploymentDescription: "Target 5.5% scrap rate on MID-FM1 and MID-FM2 through process parameter optimisation", targetMetric: "Foam scrap rate", targetValue: "5.50", currentValue: "7.10", unit: "%", status: "active" },
+      { objectiveId: boIds["C1"], objectiveType: "bo", objectiveCode: "C1", siteId: SITE_IDS["Vita Dukinfield"], siteName: "Vita Dukinfield", sqdcpCategory: "cost", deploymentTitle: "Reduce conversion waste — lamination & bonding", deploymentDescription: "Value-stream mapping to eliminate waste in DUK-CV1 and DUK-CV2 conversion lines", targetMetric: "Conversion waste rate", targetValue: "3.00", currentValue: "5.20", unit: "%", status: "active" },
+      { objectiveId: boIds["C1"], objectiveType: "bo", objectiveCode: "C1", siteId: SITE_IDS["Vita Bedford"], siteName: "Vita Bedford", sqdcpCategory: "cost", deploymentTitle: "Reduce changeover cost — SMED programme", deploymentDescription: "Apply SMED methodology to BED-FM1 cutting lines to reduce changeover from 42 to 27 min", targetMetric: "Changeover time", targetValue: "27.00", currentValue: "42.00", unit: "minutes", status: "active" },
+      // S1 → Safety deployments
+      { objectiveId: boIds["S1"], objectiveType: "bo", objectiveCode: "S1", siteId: SITE_IDS["Vita Middleton"], siteName: "Vita Middleton", sqdcpCategory: "safety", deploymentTitle: "Reduce incidents — standardised safety audits", deploymentDescription: "Deploy safety audit checklists and near-miss reporting at Middleton site", targetMetric: "Lost-time incidents", targetValue: "0.00", currentValue: "1.00", unit: "incidents", status: "deployed" },
+      { objectiveId: boIds["S1"], objectiveType: "bo", objectiveCode: "S1", siteId: SITE_IDS["Vita Dukinfield"], siteName: "Vita Dukinfield", sqdcpCategory: "safety", deploymentTitle: "Reduce incidents — safety audit programme", deploymentDescription: "Standardised safety audits and monthly review cadence at Dukinfield", targetMetric: "Lost-time incidents", targetValue: "0.00", currentValue: "1.00", unit: "incidents", status: "deployed" },
+      // D1 → Delivery deployments
+      { objectiveId: boIds["D1"], objectiveType: "bo", objectiveCode: "D1", siteId: SITE_IDS["Vita Mattress Poland"], siteName: "Vita Mattress Poland", sqdcpCategory: "delivery", deploymentTitle: "Ramp up mattress production to full capacity", deploymentDescription: "Commission MPL-ML1 assembly line and achieve 80% utilisation", targetMetric: "Line utilisation", targetValue: "80.00", currentValue: "34.00", unit: "%", status: "active" },
+      // Q1 → Quality deployments
+      { objectiveId: boIds["Q1"], objectiveType: "bo", objectiveCode: "Q1", siteId: SITE_IDS["Draka Interfoam Almelo"], siteName: "Draka Interfoam Almelo", sqdcpCategory: "quality", deploymentTitle: "OEE digital rollout — foam-making lines", deploymentDescription: "Install OEE sensors and dashboards on ALM-FL1 and ALM-CT1", targetMetric: "OEE", targetValue: "85.00", currentValue: "72.40", unit: "%", status: "active" },
+      { objectiveId: boIds["Q1"], objectiveType: "bo", objectiveCode: "Q1", siteId: SITE_IDS["Caligen Foam Essen"], siteName: "Caligen Foam Essen", sqdcpCategory: "quality", deploymentTitle: "OEE digital rollout — ESS-FL1", deploymentDescription: "Install OEE sensors and dashboards on ESS-FL1 machine", targetMetric: "OEE", targetValue: "85.00", currentValue: "68.00", unit: "%", status: "deployed" },
+      // M1 → People deployments
+      { objectiveId: boIds["M1"], objectiveType: "bo", objectiveCode: "M1", siteId: SITE_IDS["Vita Middleton"], siteName: "Vita Middleton", sqdcpCategory: "people", deploymentTitle: "CI Academy — operator training programme", deploymentDescription: "Deliver 5S, problem solving, and standard work training modules", targetMetric: "Operators trained", targetValue: "30.00", currentValue: "12.00", unit: "people", status: "active" },
+      { objectiveId: boIds["M1"], objectiveType: "bo", objectiveCode: "M1", siteId: SITE_IDS["Vita Bedford"], siteName: "Vita Bedford", sqdcpCategory: "people", deploymentTitle: "CI Academy — operator training programme", deploymentDescription: "Deliver continuous improvement training modules to Bedford operators", targetMetric: "Operators trained", targetValue: "25.00", currentValue: "8.00", unit: "people", status: "active" },
     ];
 
     for (const dep of deployments) {
