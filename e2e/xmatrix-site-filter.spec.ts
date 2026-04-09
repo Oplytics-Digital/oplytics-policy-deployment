@@ -62,12 +62,16 @@ async function selectVitaMiddleton(page: Page) {
   await siteTrigger.focus();
   await page.keyboard.press("Enter");
 
-  // Select "Vita Middleton" from the site dropdown
+  // Select "Vita Middleton" from the site dropdown.
+  // Use focus + Enter instead of .click() — the BU menu's DismissableLayer briefly
+  // suppresses pointer events after closing, which can cause .click() on the site
+  // menu item to time out even though the element is visible.
   const siteOption = page
     .getByRole("menuitem", { name: /vita middleton/i })
     .first();
   await expect(siteOption).toBeVisible();
-  await siteOption.click();
+  await siteOption.focus();
+  await page.keyboard.press("Enter");
 
   // Wait for filtering to apply — verify a known Middleton BO appears
   await expect(

@@ -146,10 +146,12 @@ export function filterPlanBySiteIds(
   });
   const filteredAoIds = new Set(filteredAos.map(ao => ao.id));
 
-  // Step 2: Trace UP — find BOs connected to scoped AOs (bo-ao quadrant)
+  // Step 2: Trace UP — find BOs connected to scoped AOs via STRONG bo-ao correlations.
+  // Weak links are X-Matrix visual decorations only; they must not pull a BO into scope
+  // (e.g. Q1→T1 weak would incorrectly surface Q1 in F&B-filtered views).
   const connectedBoIds = new Set<string>();
   for (const c of plan.correlations) {
-    if (c.quadrant !== 'bo-ao') continue;
+    if (c.quadrant !== 'bo-ao' || c.strength !== 'strong') continue;
     if (filteredAoIds.has(c.targetId)) connectedBoIds.add(c.sourceId);
     if (filteredAoIds.has(c.sourceId)) connectedBoIds.add(c.targetId);
   }
