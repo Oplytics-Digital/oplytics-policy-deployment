@@ -146,7 +146,9 @@ export function filterPlanBySiteIds(
   });
   const filteredAoIds = new Set(filteredAos.map(ao => ao.id));
 
-  // Step 2: Trace UP — find BOs connected to scoped AOs (bo-ao quadrant)
+  // Step 2: Trace UP — find BOs connected to scoped AOs (bo-ao quadrant).
+  // Both strong and weak links pull a BO into scope — weak links reflect real
+  // operational relevance (e.g. Q1 OEE is relevant to F&B foam-making sites).
   const connectedBoIds = new Set<string>();
   for (const c of plan.correlations) {
     if (c.quadrant !== 'bo-ao') continue;

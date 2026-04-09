@@ -4,9 +4,10 @@ import { test, expect, Page } from "@playwright/test";
  * Test 2 — Select Vita Middleton in hierarchy breadcrumb,
  * verify X-Matrix filters to show only deployed objectives.
  *
- * Vita Middleton (siteId=1) has deployment targets for BOs: C1, S1, M1.
+ * Vita Middleton (siteId=1) has foam-making and cutting lines, so Q1 (Achieve OEE >85%)
+ * is also in scope via its weak bo-ao link to T1.
  * Correlation tracing chain:
- *   BOs: C1, S1, M1
+ *   BOs: C1, S1, M1, Q1
  *   AOs: T1, T2, T5, T6
  *   Projects: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1
  *   KPIs: IP1.1, IP1.4, IP1.5, IP1.7
@@ -62,12 +63,16 @@ async function selectVitaMiddleton(page: Page) {
   await siteTrigger.focus();
   await page.keyboard.press("Enter");
 
-  // Select "Vita Middleton" from the site dropdown
+  // Select "Vita Middleton" from the site dropdown.
+  // Use focus + Enter instead of .click() — the BU menu's DismissableLayer briefly
+  // suppresses pointer events after closing, which can cause .click() on the site
+  // menu item to time out even though the element is visible.
   const siteOption = page
     .getByRole("menuitem", { name: /vita middleton/i })
     .first();
   await expect(siteOption).toBeVisible();
-  await siteOption.click();
+  await siteOption.focus();
+  await page.keyboard.press("Enter");
 
   // Wait for filtering to apply — verify a known Middleton BO appears
   await expect(
@@ -117,9 +122,11 @@ test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
       page.getByText(/continuous improvement culture/i).first()
     ).toBeVisible();
 
-    // Verify BOs that should NOT be visible (not deployed to Middleton)
+    // Q1 is also in scope — Middleton has foam-making and cutting lines
+    await expect(page.getByText(/achieve oee/i).first()).toBeVisible();
+
+    // D1 (Finished Mattress only) should NOT be visible
     await expect(page.getByText(/grow.*mattress revenue/i)).not.toBeVisible();
-    await expect(page.getByText(/achieve oee/i)).not.toBeVisible();
   });
 
   test("should show correct projects for Vita Middleton", async ({ page }) => {
