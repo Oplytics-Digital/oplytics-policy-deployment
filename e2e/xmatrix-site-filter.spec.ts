@@ -77,7 +77,11 @@ async function selectVitaMiddleton(page: Page) {
 
 test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
   test.beforeEach(async ({ page }) => {
+    // Clear sessionStorage before each test so no persisted hierarchy selection
+    // bleeds in from a previous test run.
     await page.goto("/xmatrix");
+    await page.evaluate(() => sessionStorage.clear());
+    await page.reload();
     await page.waitForLoadState("domcontentloaded");
 
     // Wait for the X-Matrix to render with full enterprise data
