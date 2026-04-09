@@ -47,6 +47,12 @@ const SITE_CODE_MAP = {
   "Vita Mattress Poland":   "MPL",
 };
 
+// BU IDs from the Portal Service API (Vita Group enterprise=1).
+// Confirmed from portal hierarchy — update if portal assigns different IDs.
+const BU_IDS = {
+  "Furniture & Bedding": 1,
+};
+
 /**
  * Fetch site IDs from the Portal hierarchy API so they always match the live DB.
  * Uses PORTAL_URL + PORTAL_API_KEY env vars (same as the runtime server).
@@ -211,13 +217,17 @@ async function seed() {
     }
 
     // 4. Annual Objectives
+    // cascadeScope + scopeEntityIds control X-Matrix filtering:
+    //   site  → visible when filtering to one of the listed site IDs
+    //   bu    → visible when filtering to the BU or any site within it
+    //   enterprise → always visible regardless of filter
     const aoData = [
-      { code: "T1", description: "Reduce foam scrap rate from 8.2% to 5.5% at Middleton & Dukinfield sites", ownerName: "Robin Parry", status: "on-track", sortOrder: 1 },
-      { code: "T2", description: "Implement standardised safety audits across all 9 F&B sites", ownerName: "Rachel Attwood", status: "on-track", sortOrder: 2 },
-      { code: "T3", description: "Launch mattress production at Vita Mattress Poland (Poznan) to full capacity", ownerName: "Omar Hoek", status: "at-risk", sortOrder: 3 },
-      { code: "T4", description: "Deploy OEE tracking on all foam-making machines across Almelo & Essen", ownerName: "Markus Westerkamp", status: "on-track", sortOrder: 4 },
-      { code: "T5", description: "Reduce changeover time by 35% on cutting lines at Bedford & Corby", ownerName: "Laura Whitfield", status: "off-track", sortOrder: 5 },
-      { code: "T6", description: "Roll out Vita CI Academy training programme to 200+ operators", ownerName: "Cyril Wasem", status: "on-track", sortOrder: 6 },
+      { code: "T1", description: "Reduce foam scrap rate from 8.2% to 5.5% at Middleton & Dukinfield sites", ownerName: "Robin Parry", status: "on-track", sortOrder: 1, cascadeScope: "site", scopeEntityIds: [SITE_IDS["Vita Middleton"], SITE_IDS["Vita Dukinfield"]] },
+      { code: "T2", description: "Implement standardised safety audits across all 9 F&B sites", ownerName: "Rachel Attwood", status: "on-track", sortOrder: 2, cascadeScope: "bu", scopeEntityIds: [BU_IDS["Furniture & Bedding"]] },
+      { code: "T3", description: "Launch mattress production at Vita Mattress Poland (Poznan) to full capacity", ownerName: "Omar Hoek", status: "at-risk", sortOrder: 3, cascadeScope: "site", scopeEntityIds: [SITE_IDS["Vita Mattress Poland"]] },
+      { code: "T4", description: "Deploy OEE tracking on all foam-making machines across Almelo & Essen", ownerName: "Markus Westerkamp", status: "on-track", sortOrder: 4, cascadeScope: "site", scopeEntityIds: [SITE_IDS["Draka Interfoam Almelo"], SITE_IDS["Caligen Foam Essen"]] },
+      { code: "T5", description: "Reduce changeover time by 35% on cutting lines at Bedford & Corby", ownerName: "Laura Whitfield", status: "off-track", sortOrder: 5, cascadeScope: "bu", scopeEntityIds: [BU_IDS["Furniture & Bedding"]] },
+      { code: "T6", description: "Roll out Vita CI Academy training programme to 200+ operators", ownerName: "Cyril Wasem", status: "on-track", sortOrder: 6, cascadeScope: "enterprise", scopeEntityIds: null },
     ];
 
     for (const ao of aoData) {
@@ -268,7 +278,8 @@ async function seed() {
       { sourceId: boIds["S1"], targetId: aoIds["T2"], sourceType: "bo", targetType: "ao", strength: "strong", quadrant: "bo-ao" },
       { sourceId: boIds["D1"], targetId: aoIds["T3"], sourceType: "bo", targetType: "ao", strength: "strong", quadrant: "bo-ao" },
       { sourceId: boIds["Q1"], targetId: aoIds["T4"], sourceType: "bo", targetType: "ao", strength: "strong", quadrant: "bo-ao" },
-      { sourceId: boIds["Q1"], targetId: aoIds["T1"], sourceType: "bo", targetType: "ao", strength: "weak", quadrant: "bo-ao" },
+      // Q1→T1 weak link intentionally omitted: Q1 (OEE) belongs to Engineered Solutions;
+      // linking it to T1 (F&B foam scrap) caused Q1 to leak into F&B-filtered views.
       { sourceId: boIds["M1"], targetId: aoIds["T6"], sourceType: "bo", targetType: "ao", strength: "strong", quadrant: "bo-ao" },
       { sourceId: boIds["M1"], targetId: aoIds["T2"], sourceType: "bo", targetType: "ao", strength: "weak", quadrant: "bo-ao" },
       // AO ↔ Project (ao-proj)
