@@ -177,10 +177,10 @@ export function filterPlanBySiteIds(
 
   // Step 5: Filter correlations to only those between matched items
   const allFilteredIds = new Set([
-    ...connectedBoIds,
-    ...filteredAoIds,
-    ...filteredProjectIds,
-    ...filteredKpiIds,
+    ...Array.from(connectedBoIds),
+    ...Array.from(filteredAoIds),
+    ...Array.from(filteredProjectIds),
+    ...Array.from(filteredKpiIds),
   ]);
   const filteredCorrelations = plan.correlations.filter(
     c => allFilteredIds.has(c.sourceId) && allFilteredIds.has(c.targetId),
