@@ -16,6 +16,8 @@ export interface AnnualObjective {
   description: string;
   owner: string;
   status: 'on-track' | 'at-risk' | 'off-track' | 'not-started';
+  cascadeScope?: 'site' | 'bu' | 'enterprise';
+  scopeEntityIds?: number[];
 }
 
 export interface Project {
