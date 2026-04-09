@@ -794,8 +794,34 @@ Format your response as a structured list with clear, concise recommendations. E
 
   // ─── Hierarchy (from Portal API) ───
   fullHierarchy: protectedProcedure
-    .query(async () => {
-      return getFullHierarchy();
+    .query(async ({ ctx }) => {
+      const enterpriseId = getEnterpriseScope(ctx.user);
+      const full = await getFullHierarchy();
+      if (!full) return null;
+
+      // SECURITY: The portal /api/service/hierarchy endpoint uses a platform-level
+      // API key, so it returns data for ALL enterprises. Scope the response to the
+      // authenticated user's enterprise before sending to the client. Platform admins
+      // (enterpriseId === null) intentionally receive the full unfiltered hierarchy.
+      if (enterpriseId === null) return full;
+
+      const data = full as Record<string, unknown[]>;
+      const filteredSites = ((data.sites ?? []) as any[]).filter(
+        (s) => s.enterpriseId === enterpriseId,
+      );
+      const siteIds = new Set(filteredSites.map((s) => s.id));
+
+      return {
+        enterprises: ((data.enterprises ?? []) as any[]).filter(
+          (e) => e.id === enterpriseId,
+        ),
+        businessUnits: ((data.businessUnits ?? []) as any[]).filter(
+          (bu) => bu.enterpriseId === enterpriseId,
+        ),
+        sites: filteredSites,
+        areas: ((data.areas ?? []) as any[]).filter((a) => siteIds.has(a.siteId)),
+        assets: ((data.assets ?? []) as any[]).filter((a) => siteIds.has(a.siteId)),
+      };
     }),
 
   // ─── Sites (from Portal API) ───
