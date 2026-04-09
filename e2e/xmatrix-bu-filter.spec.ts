@@ -8,12 +8,14 @@ import { test, expect, Page } from "@playwright/test";
  *   - Vita Middleton (siteId=1): C1, S1, M1 deployed
  *   - Vita Dukinfield (siteId=2): C1, S1 deployed
  *
- * Union of BOs across both sites: C1, S1, M1
- * This is broader than a single site but narrower than the full enterprise
- * (which includes D1, Q1 deployed to other BUs).
+ * F&B sites run foam-making and cutting lines, so Q1 (Achieve OEE >85%) is
+ * also in scope via its weak bo-ao link to T1 (foam scrap at Middleton & Dukinfield).
+ *
+ * Union of BOs in scope at F&B: C1, S1, M1, Q1
+ * D1 (Grow mattress revenue) is Finished Mattress only — not visible here.
  *
  * The BU filter should show:
- *   BOs: C1, S1, M1 (NOT D1, Q1)
+ *   BOs: C1, S1, M1, Q1 (NOT D1)
  *   AOs: T1, T2, T5, T6 (NOT T3, T4)
  *   Projects: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1 (NOT FM-1.1, ES-1.1)
  *   KPIs: IP1.1, IP1.4, IP1.5, IP1.7 (NOT IP1.2, IP1.3, IP1.6)
@@ -84,9 +86,11 @@ test.describe("X-Matrix BU Filtering — Furniture & Bedding", () => {
       page.getByText(/continuous improvement culture/i).first()
     ).toBeVisible();
 
-    // Verify BOs that should NOT be visible (deployed to other BUs only)
+    // Q1 is also in scope — F&B sites have foam-making and cutting lines
+    await expect(page.getByText(/achieve oee/i).first()).toBeVisible();
+
+    // D1 (Finished Mattress only) should NOT be visible
     await expect(page.getByText(/grow.*mattress revenue/i)).not.toBeVisible();
-    await expect(page.getByText(/achieve oee/i)).not.toBeVisible();
   });
 
   test("should show broader results than single site when BU is selected", async ({

@@ -1,5 +1,5 @@
 /**
- * One-time patch: fix T5 cascade scope and remove erroneous Q1→T1 correlation.
+ * One-time patch: fix T5 cascade scope and ensure Q1→T1 correlation exists.
  *
  * Problems fixed:
  *   1. T5 was seeded with cascadeScope='site', scopeEntityIds=[3,5] (Bedford & Corby).
@@ -7,10 +7,10 @@
  *      it should be bu-scoped to BU 1 (Furniture & Bedding) so it appears when viewing
  *      any F&B site (Middleton, Dukinfield, Bedford, Corby) and the F&B BU level.
  *
- *   2. A weak bo-ao correlation Q1→T1 exists in the data. Q1 (Achieve OEE >85%) belongs
- *      to Engineered Solutions. T1 (Reduce foam scrap at Middleton & Dukinfield) belongs
- *      to F&B. When filtering to F&B, T1 is in scope, which traces up to Q1, incorrectly
- *      pulling Q1 into the F&B view. The Q1→T1 weak link is data noise and must be removed.
+ *   2. Q1→T1 (weak bo-ao) may have been deleted by an earlier erroneous patch run.
+ *      F&B sites (Middleton, Dukinfield) have foam-making and cutting lines, so Q1
+ *      (Achieve OEE >85%) correctly appears in F&B views via the weak link to T1.
+ *      This step restores the correlation if it is missing.
  *
  * Run from project root:
  *   node --import tsx scripts/patchCascadeScope.mjs
@@ -62,7 +62,9 @@ async function patch() {
     console.log(`  ✅ T5 (id=${t5Rows[0].id}): cascadeScope='bu', scopeEntityIds=[1]`);
   }
 
-  // ── Fix 2: Remove Q1→T1 weak bo-ao correlation ──
+  // ── Fix 2: Ensure Q1→T1 weak bo-ao correlation exists ──
+  // F&B sites have foam-making and cutting lines so Q1 (Achieve OEE >85%)
+  // correctly appears in F&B-filtered views via the weak link to T1.
   const q1Rows = await db
     .select()
     .from(breakthroughObjectives)
@@ -74,13 +76,14 @@ async function patch() {
     .where(and(eq(annualObjectives.planId, planId), eq(annualObjectives.code, "T1")));
 
   if (q1Rows.length === 0 || t1Rows.length === 0) {
-    console.log("  ⚠️  Q1 or T1 not found — skipping correlation removal");
+    console.log("  ⚠️  Q1 or T1 not found — skipping correlation check");
   } else {
     const q1Id = q1Rows[0].id;
     const t1Id = t1Rows[0].id;
 
-    const deleted = await db
-      .delete(policyCorrelations)
+    const existing = await db
+      .select()
+      .from(policyCorrelations)
       .where(
         and(
           eq(policyCorrelations.planId, planId),
@@ -88,10 +91,23 @@ async function patch() {
           eq(policyCorrelations.targetId, t1Id),
           eq(policyCorrelations.sourceType, "bo"),
           eq(policyCorrelations.targetType, "ao"),
-          eq(policyCorrelations.quadrant, "bo-ao"),
         ),
       );
-    console.log(`  ✅ Deleted Q1(id=${q1Id})→T1(id=${t1Id}) weak bo-ao correlation`);
+
+    if (existing.length > 0) {
+      console.log(`  ✅ Q1→T1 weak bo-ao correlation already present (id=${existing[0].id})`);
+    } else {
+      await db.insert(policyCorrelations).values({
+        planId,
+        sourceId: q1Id,
+        targetId: t1Id,
+        sourceType: "bo",
+        targetType: "ao",
+        strength: "weak",
+        quadrant: "bo-ao",
+      });
+      console.log(`  ✅ Restored Q1(id=${q1Id})→T1(id=${t1Id}) weak bo-ao correlation`);
+    }
   }
 
   console.log("\n✅ Patch complete.");

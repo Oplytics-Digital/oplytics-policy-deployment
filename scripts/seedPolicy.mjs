@@ -278,8 +278,7 @@ async function seed() {
       { sourceId: boIds["S1"], targetId: aoIds["T2"], sourceType: "bo", targetType: "ao", strength: "strong", quadrant: "bo-ao" },
       { sourceId: boIds["D1"], targetId: aoIds["T3"], sourceType: "bo", targetType: "ao", strength: "strong", quadrant: "bo-ao" },
       { sourceId: boIds["Q1"], targetId: aoIds["T4"], sourceType: "bo", targetType: "ao", strength: "strong", quadrant: "bo-ao" },
-      // Q1→T1 weak link intentionally omitted: Q1 (OEE) belongs to Engineered Solutions;
-      // linking it to T1 (F&B foam scrap) caused Q1 to leak into F&B-filtered views.
+      { sourceId: boIds["Q1"], targetId: aoIds["T1"], sourceType: "bo", targetType: "ao", strength: "weak", quadrant: "bo-ao" },
       { sourceId: boIds["M1"], targetId: aoIds["T6"], sourceType: "bo", targetType: "ao", strength: "strong", quadrant: "bo-ao" },
       { sourceId: boIds["M1"], targetId: aoIds["T2"], sourceType: "bo", targetType: "ao", strength: "weak", quadrant: "bo-ao" },
       // AO ↔ Project (ao-proj)
