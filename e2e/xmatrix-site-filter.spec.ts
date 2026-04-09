@@ -22,10 +22,12 @@ async function selectVitaMiddleton(page: Page) {
   // Scope to the HierarchyNavigator <nav aria-label="Hierarchy navigation">
   const nav = page.getByLabel("Hierarchy navigation");
 
-  // Click "Select Business Unit" in the hierarchy breadcrumb
-  const buPrompt = nav.getByText(/select business unit/i);
-  await expect(buPrompt).toBeVisible();
-  await buPrompt.click();
+  // Use keyboard to open the BU dropdown instead of .click() — same
+  // DismissableLayer race condition as the site dropdown below.
+  const buTrigger = nav.locator("button").filter({ hasText: /select business unit/i });
+  await expect(buTrigger).toBeVisible();
+  await buTrigger.focus();
+  await page.keyboard.press("Enter");
 
   // Select "Furniture & Bedding" from the dropdown menu (renders in a portal,
   // so we use page-level menuitem role which uniquely targets the dropdown)

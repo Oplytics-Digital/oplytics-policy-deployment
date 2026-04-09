@@ -24,10 +24,22 @@ async function selectFurnitureBU(page: Page) {
   // Scope to the HierarchyNavigator <nav aria-label="Hierarchy navigation">
   const nav = page.getByLabel("Hierarchy navigation");
 
-  // Click "Select Business Unit" in the hierarchy breadcrumb
-  const buPrompt = nav.getByText(/select business unit/i);
-  await expect(buPrompt).toBeVisible();
-  await buPrompt.click();
+  // Use keyboard to open the BU dropdown instead of .click().
+  //
+  // Playwright's full .click() sequence fires:
+  //   pointerdown → React opens dropdown → DismissableLayer mounts
+  //   → DismissableLayer's document pointerdown listener captures the trigger
+  //     pointerdown as an "outside" event (React 18 flushes synchronously,
+  //     so the layer is already mounted when the event finishes bubbling)
+  //   → immediate onDismiss → dropdown closes before click even returns
+  //
+  // Keyboard activation (focus + Enter) dispatches only keydown/keypress/keyup
+  // via CDP. No pointer events fire, so DismissableLayer never detects an
+  // outside interaction and the menu stays open.
+  const buTrigger = nav.locator("button").filter({ hasText: /select business unit/i });
+  await expect(buTrigger).toBeVisible();
+  await buTrigger.focus();
+  await page.keyboard.press("Enter");
 
   // Select "Furniture & Bedding" from the dropdown menu (renders in a portal,
   // so we use page-level menuitem role which uniquely targets the dropdown)
