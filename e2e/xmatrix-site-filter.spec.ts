@@ -1,24 +1,25 @@
 import { test, expect, Page } from "@playwright/test";
 
 /**
- * Test 2 — Select Vita Middleton in hierarchy breadcrumb,
+ * Test 2 — Select Sheffield in hierarchy breadcrumb,
  * verify X-Matrix filters to show only deployed objectives.
  *
- * Vita Middleton (siteId=1) has deployment targets for BOs: C1, S1, M1.
+ * Live enterprise: Lincoln Electric (LEE)
+ * Sheffield (LEE-SHF) has deployment targets for BOs: C1, S1, M1.
  * Correlation tracing chain:
  *   BOs: C1, S1, M1
  *   AOs: T1, T2, T5, T6
  *   Projects: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1
  *   KPIs: IP1.1, IP1.4, IP1.5, IP1.7
  *
- * Items NOT deployed to Middleton:
+ * Items NOT deployed to Sheffield:
  *   BOs: D1, Q1
  *   Projects: FM-1.1 (Poznan), ES-1.1 (OEE Almelo & Essen)
  *   KPIs: IP1.2 (OEE F&B), IP1.3 (Mattress OTD), IP1.6 (Poznan utilisation)
  */
 
-/** Navigate breadcrumb to Vita Middleton (Furniture & Bedding → Vita Middleton) */
-async function selectVitaMiddleton(page: Page) {
+/** Navigate breadcrumb to Sheffield (UK & Ireland → Sheffield) */
+async function selectSheffield(page: Page) {
   // Scope to the HierarchyNavigator <nav aria-label="Hierarchy navigation">
   const nav = page.getByLabel("Hierarchy navigation");
 
@@ -29,9 +30,9 @@ async function selectVitaMiddleton(page: Page) {
   await buTrigger.focus();
   await page.keyboard.press("Enter");
 
-  // Select "Furniture & Bedding" from the dropdown menu (renders in a portal,
+  // Select "UK & Ireland" from the dropdown menu (renders in a portal,
   // so we use page-level menuitem role which uniquely targets the dropdown)
-  const buOption = page.getByRole("menuitem", { name: /furniture/i }).first();
+  const buOption = page.getByRole("menuitem", { name: /UK.*Ireland/i }).first();
   await expect(buOption).toBeVisible();
   await buOption.click();
 
@@ -62,9 +63,9 @@ async function selectVitaMiddleton(page: Page) {
   await siteTrigger.focus();
   await page.keyboard.press("Enter");
 
-  // Select "Vita Middleton" from the site dropdown
+  // Select "Sheffield" from the site dropdown
   const siteOption = page
-    .getByRole("menuitem", { name: /vita middleton/i })
+    .getByRole("menuitem", { name: /sheffield/i })
     .first();
   await expect(siteOption).toBeVisible();
   await siteOption.click();
@@ -75,7 +76,7 @@ async function selectVitaMiddleton(page: Page) {
   ).toBeVisible({ timeout: 10_000 });
 }
 
-test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
+test.describe("X-Matrix Site Filtering — Sheffield", () => {
   test.beforeEach(async ({ page }) => {
     // Clear sessionStorage before each test so no persisted hierarchy selection
     // bleeds in from a previous test run.
@@ -99,10 +100,10 @@ test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
     }
   });
 
-  test("should filter X-Matrix when Vita Middleton site is selected", async ({
+  test("should filter X-Matrix when Sheffield site is selected", async ({
     page,
   }) => {
-    await selectVitaMiddleton(page);
+    await selectSheffield(page);
 
     // Verify BOs that SHOULD be visible (deployed to Middleton)
     await expect(
@@ -122,8 +123,8 @@ test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
     await expect(page.getByText(/achieve oee/i)).not.toBeVisible();
   });
 
-  test("should show correct projects for Vita Middleton", async ({ page }) => {
-    await selectVitaMiddleton(page);
+  test("should show correct projects for Sheffield", async ({ page }) => {
+    await selectSheffield(page);
 
     // Projects visible at Middleton: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1
     await expect(
@@ -147,8 +148,8 @@ test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
     await expect(page.getByText(/oee digital rollout/i)).not.toBeVisible();
   });
 
-  test("should show correct KPIs for Vita Middleton", async ({ page }) => {
-    await selectVitaMiddleton(page);
+  test("should show correct KPIs for Sheffield", async ({ page }) => {
+    await selectSheffield(page);
 
     // KPIs visible at Middleton: IP1.1, IP1.4, IP1.5, IP1.7
     await expect(page.getByText(/foam scrap rate/i).first()).toBeVisible();
