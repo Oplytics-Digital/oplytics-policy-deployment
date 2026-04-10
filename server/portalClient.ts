@@ -9,6 +9,34 @@ import { AXIOS_TIMEOUT_MS } from "@shared/const";
 
 // ─── Types ───
 
+export interface PortalPlan {
+  id: number;
+  enterpriseId: number;
+  title: string;
+  year: number;
+  level: string;
+  ownerName: string | null;
+  status: string;
+  updatedAt: string | null;
+}
+
+export interface PortalFullPlan extends PortalPlan {
+  breakthroughObjectives: unknown[];
+  annualObjectives: unknown[];
+  projects: unknown[];
+  kpis: unknown[];
+  correlations: unknown[];
+}
+
+export interface PortalBowlingEntry {
+  id: number;
+  kpiId: number;
+  month: number;
+  year: number;
+  planValue: string | null;
+  actualValue: string | null;
+}
+
 export interface PortalUser {
   id: number;
   openId: string;
@@ -188,6 +216,75 @@ export async function getEnterpriseSites(enterpriseId: number): Promise<PortalSi
       return [];
     }
     console.warn(`[PortalClient] Failed to fetch sites for enterprise ${enterpriseId}:`, error?.message);
+    return [];
+  }
+}
+
+// ─── Policy Plans ───
+
+/**
+ * List active policy plans from the portal.
+ * Returns all active plans visible to the configured service key.
+ */
+export async function getPlans(): Promise<PortalPlan[]> {
+  try {
+    const client = getPortalClient();
+    if (!client) return [];
+    const { data } = await client.get("/api/service/policy/plans");
+    return (data as PortalPlan[]) || [];
+  } catch (error: any) {
+    if (error?.response?.status === 401) {
+      console.error("[PortalClient] 401 Unauthorized — check PORTAL_API_KEY");
+      _keyRevoked = true;
+      _client = null;
+      return [];
+    }
+    console.warn("[PortalClient] Failed to fetch plans:", error?.message);
+    return [];
+  }
+}
+
+/**
+ * Get a full plan (BOs, AOs, Projects, KPIs, Correlations) from the portal.
+ * Returns null if the plan is not found.
+ */
+export async function getPlanFull(planId: number): Promise<PortalFullPlan | null> {
+  try {
+    const client = getPortalClient();
+    if (!client) return null;
+    const { data } = await client.get(`/api/service/policy/plans/${planId}`);
+    return (data as PortalFullPlan) ?? null;
+  } catch (error: any) {
+    if (error?.response?.status === 401) {
+      console.error("[PortalClient] 401 Unauthorized — check PORTAL_API_KEY");
+      _keyRevoked = true;
+      _client = null;
+      return null;
+    }
+    if (error?.response?.status === 404) return null;
+    console.warn(`[PortalClient] Failed to fetch full plan ${planId}:`, error?.message);
+    return null;
+  }
+}
+
+/**
+ * Get all bowling entries for a plan from the portal.
+ */
+export async function getBowlingEntries(planId: number): Promise<PortalBowlingEntry[]> {
+  try {
+    const client = getPortalClient();
+    if (!client) return [];
+    const { data } = await client.get(`/api/service/policy/plans/${planId}/bowling`);
+    return (data as PortalBowlingEntry[]) || [];
+  } catch (error: any) {
+    if (error?.response?.status === 401) {
+      console.error("[PortalClient] 401 Unauthorized — check PORTAL_API_KEY");
+      _keyRevoked = true;
+      _client = null;
+      return [];
+    }
+    if (error?.response?.status === 404) return [];
+    console.warn(`[PortalClient] Failed to fetch bowling entries for plan ${planId}:`, error?.message);
     return [];
   }
 }
