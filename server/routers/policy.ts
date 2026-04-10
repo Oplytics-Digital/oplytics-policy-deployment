@@ -86,11 +86,15 @@ function getEnterpriseScope(
   return (user as any).enterpriseId ?? null;
 }
 
+/**
+ * Verify a plan belongs to the user's enterprise.
+ * Uses portal API (not local DB) so plan IDs from portal are valid.
+ */
 async function verifyPlanEnterprise(
   planId: number,
   enterpriseId: number | null,
-): Promise<NonNullable<Awaited<ReturnType<typeof getPolicyPlan>>>> {
-  const plan = await getPolicyPlan(planId);
+): Promise<NonNullable<Awaited<ReturnType<typeof getPlanFull>>>> {
+  const plan = await getPlanFull(planId);
   if (!plan) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found" });
   }
@@ -131,8 +135,29 @@ export const policyRouter = router({
     .input(z.object({ planId: z.number(), enterpriseId: z.number().optional() }))
     .query(async ({ input, ctx }) => {
       const enterpriseId = getEnterpriseScope(ctx.user, input.enterpriseId);
-      await verifyPlanEnterprise(input.planId, enterpriseId);
-      return getPlanFull(input.planId);
+      // verifyPlanEnterprise already fetches via getPlanFull — reuse the result
+      const plan = await verifyPlanEnterprise(input.planId, enterpriseId);
+
+      // Portal doesn't track cascadeScope/scopeEntityIds yet — augment AOs
+      // from local DB so BU/site filtering continues to work.
+      try {
+        const localAos = await listAnnualObjectives(input.planId);
+        if (localAos.length > 0) {
+          const scopeByCode = new Map(localAos.map(ao => [ao.code, {
+            cascadeScope: ao.cascadeScope,
+            scopeEntityIds: ao.scopeEntityIds,
+          }]));
+          (plan as any).annualObjectives = ((plan as any).annualObjectives ?? []).map((ao: any) => ({
+            ...ao,
+            cascadeScope: scopeByCode.get(ao.code)?.cascadeScope ?? ao.cascadeScope,
+            scopeEntityIds: scopeByCode.get(ao.code)?.scopeEntityIds ?? ao.scopeEntityIds,
+          }));
+        }
+      } catch {
+        // Local DB unavailable — return portal data without cascade scope
+      }
+
+      return plan;
     }),
 
   createPlan: adminProcedure
