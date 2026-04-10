@@ -67,23 +67,18 @@ import {
 /**
  * Resolve the effective enterprise scope for a query.
  *
- * @param user           The authenticated user from ctx
- * @param selectedId     Optional enterprise ID from the client (breadcrumb selection)
- * @returns              The enterprise ID to filter by, or null for unrestricted (platform_admin with no selection)
+ * All roles (including platform_admin) are scoped to their JWT enterpriseId.
+ * Falls back to 1 (Vita Group) when the JWT has no enterpriseId (legacy
+ * platform_admin tokens issued before portal adds enterpriseId).
  *
- * Security rules:
- * - Non-admin users: ALWAYS scoped to ctx.user.enterpriseId (selectedId is ignored)
- * - platform_admin:  uses selectedId if provided, otherwise null (all enterprises)
+ * Future: portal will issue enterpriseId in the JWT for platform_admin at
+ * login time via an environment selector.
  */
 function getEnterpriseScope(
   user: { role: string; enterpriseId?: number | null },
-  selectedId?: number | null,
+  _selectedId?: number | null,
 ): number | null {
-  if (user.role === "platform_admin") {
-    return selectedId ?? null;
-  }
-  // Non-admin: always their own enterprise, ignore any selectedId
-  return (user as any).enterpriseId ?? null;
+  return user.enterpriseId ?? 1;
 }
 
 /**

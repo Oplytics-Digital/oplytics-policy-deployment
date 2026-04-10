@@ -62,7 +62,9 @@ const { OrgHierarchyProvider, useOrgHierarchy } = createOrgHierarchyContext({
 
 function HierarchyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const canSwitchEnterprise = (user?.role as string) === "platform_admin";
+  // Enterprise switching disabled — all users (including platform_admin) are
+  // scoped to a single enterprise. Future: portal login-time environment selector.
+  const canSwitchEnterprise = false;
 
   return (
     <OrgHierarchyProvider canSwitchEnterprise={canSwitchEnterprise}>
