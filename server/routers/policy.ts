@@ -15,7 +15,7 @@ import { invokeLLM } from "../_core/llm";
 import { desc, eq, inArray } from "drizzle-orm";
 import { metricPushLogs, policyPlans } from "../../drizzle/schema";
 import { getDb } from "../db";
-import { getEnterpriseUsers, getEnterpriseSites, getFullHierarchy } from "../portalClient";
+import { getEnterpriseUsers, getEnterpriseSites, getFullHierarchy, getPlans, getPlanFull, getBowlingEntries } from "../portalClient";
 import {
   createPolicyPlan,
   getPolicyPlan,
@@ -111,7 +111,13 @@ export const policyRouter = router({
     .input(optionalEnterpriseInput)
     .query(async ({ input, ctx }) => {
       const enterpriseId = getEnterpriseScope(ctx.user, input?.enterpriseId);
-      return listPolicyPlans(enterpriseId ?? undefined);
+      const plans = await getPlans();
+      // Portal returns all active plans visible to the service key.
+      // When the key has platform-level access, scope down to the user's enterprise.
+      if (enterpriseId !== null) {
+        return plans.filter((p: any) => p.enterpriseId === enterpriseId);
+      }
+      return plans;
     }),
 
   getPlan: protectedProcedure
@@ -126,7 +132,7 @@ export const policyRouter = router({
     .query(async ({ input, ctx }) => {
       const enterpriseId = getEnterpriseScope(ctx.user, input.enterpriseId);
       await verifyPlanEnterprise(input.planId, enterpriseId);
-      return getFullPlan(input.planId);
+      return getPlanFull(input.planId);
     }),
 
   createPlan: adminProcedure
@@ -480,7 +486,7 @@ export const policyRouter = router({
     .query(async ({ input, ctx }) => {
       const enterpriseId = getEnterpriseScope(ctx.user, input.enterpriseId);
       await verifyPlanEnterprise(input.planId, enterpriseId);
-      return listAllBowlingEntries(input.planId);
+      return getBowlingEntries(input.planId);
     }),
 
   upsertBowlingEntry: protectedProcedure
