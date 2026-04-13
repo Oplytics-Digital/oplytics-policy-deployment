@@ -9,6 +9,7 @@
  * This replaces the previous custom sidebar/header that was embedded in Home.tsx.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useHierarchy } from "@/contexts/HierarchyContext";
 import {
   Sidebar,
   SidebarContent,
@@ -111,6 +112,20 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
+            {/* Service Hub — top of sidebar */}
+            <SidebarMenu className="px-2 pt-2 pb-1">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => { window.location.href = "https://portal.oplytics.digital/app"; }}
+                  tooltip="Back to Service Hub"
+                  className="h-10 transition-all font-normal text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Service Hub</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+
             {/* Main navigation */}
             <div className="px-4 py-2">
               {!isCollapsed && (
@@ -190,23 +205,12 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
                   <span>Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => { window.location.href = "https://portal.oplytics.digital/app"; }}
-                  tooltip="Back to Service Hub"
-                  className="h-10 transition-all font-normal text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Service Hub</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
       </Sidebar>
 
       <SidebarInset>
         <SharedPageHeader
-          serviceName={activeMenuItem?.label ?? "Policy Deployment"}
           serviceIcon={<FileStack className="h-4 w-4" />}
           showHierarchy={true}
           hierarchyMaxDepth={5}
@@ -220,9 +224,29 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
             />
           }
         />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6 pb-14">{children}</main>
       </SidebarInset>
+
+      {/* TEMPORARY: Health display footer for platform_admin verification */}
+      {user?.role === "platform_admin" && <HealthFooter />}
     </>
+  );
+}
+
+/** Temporary health footer — shows current enterprise context for debugging */
+function HealthFooter() {
+  const { user } = useAuth();
+  const hierarchy = useHierarchy();
+  const ent = hierarchy?.selection?.enterprise;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 h-8 bg-zinc-900 border-t border-zinc-800 flex items-center px-4 gap-6 text-[11px] text-zinc-400 z-50 font-mono">
+      <span>role: <span className="text-zinc-200">{user?.role}</span></span>
+      <span>jwt.eid: <span className="text-zinc-200">{user?.enterpriseId ?? "null"}</span></span>
+      <span>hierarchy.eid: <span className="text-zinc-200">{ent?.id ?? "–"}</span></span>
+      <span>enterprise: <span className="text-zinc-200">{ent?.name ?? "–"}</span></span>
+      <span>user: <span className="text-zinc-200">{user?.openId}</span></span>
+    </div>
   );
 }
 
