@@ -9,6 +9,7 @@
  * This replaces the previous custom sidebar/header that was embedded in Home.tsx.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useHierarchy } from "@/contexts/HierarchyContext";
 import {
   Sidebar,
   SidebarContent,
@@ -223,9 +224,29 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
             />
           }
         />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6 pb-14">{children}</main>
       </SidebarInset>
+
+      {/* TEMPORARY: Health display footer for platform_admin verification */}
+      {user?.role === "platform_admin" && <HealthFooter />}
     </>
+  );
+}
+
+/** Temporary health footer — shows current enterprise context for debugging */
+function HealthFooter() {
+  const { user } = useAuth();
+  const hierarchy = useHierarchy();
+  const ent = hierarchy?.selection?.enterprise;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 h-8 bg-zinc-900 border-t border-zinc-800 flex items-center px-4 gap-6 text-[11px] text-zinc-400 z-50 font-mono">
+      <span>role: <span className="text-zinc-200">{user?.role}</span></span>
+      <span>jwt.eid: <span className="text-zinc-200">{user?.enterpriseId ?? "null"}</span></span>
+      <span>hierarchy.eid: <span className="text-zinc-200">{ent?.id ?? "–"}</span></span>
+      <span>enterprise: <span className="text-zinc-200">{ent?.name ?? "–"}</span></span>
+      <span>user: <span className="text-zinc-200">{user?.openId}</span></span>
+    </div>
   );
 }
 
