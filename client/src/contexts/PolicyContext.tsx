@@ -60,6 +60,8 @@ function dbToUiPlan(dbPlan: any): PolicyPlan {
     startDate: p.startDate ?? '',
     endDate: p.endDate ?? '',
     category: p.category ?? 'improvement',
+    cascadeScope: p.cascadeScope ?? undefined,
+    scopeEntityIds: p.scopeEntityIds ?? undefined,
   }));
 
   const kpis = (dbPlan.kpis ?? []).map((k: any) => ({
@@ -113,13 +115,11 @@ function dbToUiPlan(dbPlan: any): PolicyPlan {
  * Filter a PolicyPlan to items scoped to the given site and/or BU IDs.
  *
  * Logic:
- * 1. Filter AOs by cascadeScope + scopeEntityIds:
- *    - cascadeScope='site' → AO is in scope if any scopeEntityId is in siteIds
- *    - cascadeScope='bu'   → AO is in scope if any scopeEntityId is in buIds
- *    - AOs without scope fields are excluded
+ * 1. Filter AOs by cascadeScope + scopeEntityIds
  * 2. Trace UP: find BOs connected to scoped AOs via bo-ao correlations
- * 3. Trace DOWN: AOs → Projects (ao-proj), Projects → KPIs (proj-kpi)
- * 4. Filter correlations and bowling chart to matched items only
+ * 3. Filter projects by their own cascadeScope (independent of AOs)
+ * 4. Trace DOWN: Projects → KPIs (proj-kpi)
+ * 5. Filter correlations and bowling chart to matched items only
  */
 export function filterPlanBySiteIds(
   plan: PolicyPlan,
@@ -157,14 +157,18 @@ export function filterPlanBySiteIds(
   }
   const filteredBos = plan.breakthroughObjectives.filter(bo => connectedBoIds.has(bo.id));
 
-  // Step 3: Trace DOWN — AOs → Projects (ao-proj)
-  const connectedProjectIds = new Set<string>();
-  for (const c of plan.correlations) {
-    if (c.quadrant !== 'ao-proj') continue;
-    if (filteredAoIds.has(c.sourceId)) connectedProjectIds.add(c.targetId);
-    if (filteredAoIds.has(c.targetId)) connectedProjectIds.add(c.sourceId);
-  }
-  const filteredProjects = plan.projects.filter(p => connectedProjectIds.has(p.id));
+  // Step 3: Filter projects by their own cascadeScope (not inherited from AOs)
+  const filteredProjects = plan.projects.filter(proj => {
+    if (proj.cascadeScope === 'enterprise') return true;
+    const entityIds: number[] = JSON.parse(proj.scopeEntityIds ?? '[]');
+    if (proj.cascadeScope === 'site') {
+      return siteIds.some(id => entityIds.includes(id));
+    }
+    if (proj.cascadeScope === 'bu') {
+      return buIds.some(id => entityIds.includes(id));
+    }
+    return false;
+  });
   const filteredProjectIds = new Set(filteredProjects.map(p => p.id));
 
   // Step 4: Trace DOWN — Projects → KPIs (proj-kpi)
