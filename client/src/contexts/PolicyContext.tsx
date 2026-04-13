@@ -46,7 +46,7 @@ function dbToUiPlan(dbPlan: any): PolicyPlan {
     owner: ao.ownerName ?? '',
     status: ao.status ?? 'not-started',
     cascadeScope: ao.cascadeScope ?? undefined,
-    scopeEntityIds: Array.isArray(ao.scopeEntityIds) ? ao.scopeEntityIds as number[] : undefined,
+    scopeEntityIds: Array.isArray(ao.scopeEntityIds) ? ao.scopeEntityIds as number[] : typeof ao.scopeEntityIds === 'string' ? JSON.parse(ao.scopeEntityIds) : undefined,
   }));
 
   const projects = (dbPlan.projects ?? []).map((p: any) => ({
@@ -61,7 +61,7 @@ function dbToUiPlan(dbPlan: any): PolicyPlan {
     endDate: p.endDate ?? '',
     category: p.category ?? 'improvement',
     cascadeScope: p.cascadeScope ?? undefined,
-    scopeEntityIds: p.scopeEntityIds ?? undefined,
+    scopeEntityIds: Array.isArray(p.scopeEntityIds) ? p.scopeEntityIds as number[] : typeof p.scopeEntityIds === 'string' ? JSON.parse(p.scopeEntityIds) : undefined,
   }));
 
   const kpis = (dbPlan.kpis ?? []).map((k: any) => ({
@@ -160,7 +160,8 @@ export function filterPlanBySiteIds(
   // Step 3: Filter projects by their own cascadeScope (not inherited from AOs)
   const filteredProjects = plan.projects.filter(proj => {
     if (proj.cascadeScope === 'enterprise') return true;
-    const entityIds: number[] = JSON.parse(proj.scopeEntityIds ?? '[]');
+    const entityIds = proj.scopeEntityIds ?? [];
+    if (!entityIds.length) return false;
     if (proj.cascadeScope === 'site') {
       return siteIds.some(id => entityIds.includes(id));
     }

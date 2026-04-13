@@ -32,7 +32,7 @@ export interface Project {
   endDate: string;
   category: SqdcpPillar;
   cascadeScope?: 'enterprise' | 'bu' | 'site' | 'area' | 'asset';
-  scopeEntityIds?: string; // JSON string from portal, e.g. "[1,2]" — parsed at filter time
+  scopeEntityIds?: number[];
 }
 
 export interface KPI {
