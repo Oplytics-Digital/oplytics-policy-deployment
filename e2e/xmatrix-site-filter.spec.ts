@@ -6,16 +6,19 @@ import { test, expect, Page } from "@playwright/test";
  *
  * Vita Middleton (siteId=1) has foam-making and cutting lines, so Q1 (Achieve OEE >85%)
  * is also in scope via its weak bo-ao link to T1.
- * Correlation tracing chain:
- *   BOs: C1, S1, M1, Q1
+ *
+ * With project-level cascadeScope filtering:
+ *   BOs: C1, S1, M1, Q1 (traced UP from AOs)
  *   AOs: T1, T2, T5, T6
- *   Projects: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1
- *   KPIs: IP1.1, IP1.4, IP1.5, IP1.7
+ *   Projects: FB-1.1 (site=[1]), FB-1.3 (bu=[F&B]), ENT-1.1 (enterprise)
+ *   KPIs: IP1.1, IP1.4, IP1.7 (traced DOWN from visible projects)
  *
  * Items NOT deployed to Middleton:
- *   BOs: D1, Q1
- *   Projects: FM-1.1 (Poznan), ES-1.1 (OEE Almelo & Essen)
- *   KPIs: IP1.2 (OEE F&B), IP1.3 (Mattress OTD), IP1.6 (Poznan utilisation)
+ *   BOs: D1
+ *   Projects: FB-1.2 (site=[2] Dukinfield), FB-1.4 (site=[Bedford,Corby]),
+ *             FM-1.1 (site=[Poznan]), ES-1.1 (site=[Almelo,Essen])
+ *   KPIs: IP1.2 (OEE F&B), IP1.3 (Mattress OTD), IP1.5 (changeover time),
+ *         IP1.6 (Poznan utilisation)
  */
 
 /** Navigate breadcrumb to Vita Middleton (Furniture & Bedding → Vita Middleton) */
@@ -132,24 +135,22 @@ test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
   test("should show correct projects for Vita Middleton", async ({ page }) => {
     await selectVitaMiddleton(page);
 
-    // Projects visible at Middleton: FB-1.1, FB-1.2, FB-1.3, FB-1.4, ENT-1.1
+    // Projects visible at Middleton: FB-1.1 (site=[1]), FB-1.3 (bu=[F&B]), ENT-1.1 (enterprise)
     await expect(
       page.getByText(/middleton foam scrap reduction/i).first()
-    ).toBeVisible();
-
-    await expect(
-      page.getByText(/dukinfield conversion line/i).first()
     ).toBeVisible();
 
     await expect(
       page.getByText(/safety audit programme/i).first()
     ).toBeVisible();
 
-    await expect(page.getByText(/smed programme/i).first()).toBeVisible();
-
     await expect(page.getByText(/ci academy launch/i).first()).toBeVisible();
 
-    // Projects NOT visible at Middleton: FM-1.1, ES-1.1
+    // Projects NOT visible at Middleton:
+    // FB-1.2 (site=[2] Dukinfield only), FB-1.4 (site=[Bedford,Corby]),
+    // FM-1.1 (site=[Poznan]), ES-1.1 (site=[Almelo,Essen])
+    await expect(page.getByText(/dukinfield conversion line/i)).not.toBeVisible();
+    await expect(page.getByText(/smed programme/i)).not.toBeVisible();
     await expect(page.getByText(/poznan mattress line/i)).not.toBeVisible();
     await expect(page.getByText(/oee digital rollout/i)).not.toBeVisible();
   });
@@ -157,22 +158,23 @@ test.describe("X-Matrix Site Filtering — Vita Middleton", () => {
   test("should show correct KPIs for Vita Middleton", async ({ page }) => {
     await selectVitaMiddleton(page);
 
-    // KPIs visible at Middleton: IP1.1, IP1.4, IP1.5, IP1.7
+    // KPIs visible at Middleton: IP1.1, IP1.4, IP1.7
+    // (traced from visible projects: FB-1.1→IP1.1, FB-1.3→IP1.4, ENT-1.1→IP1.7)
     await expect(page.getByText(/foam scrap rate/i).first()).toBeVisible();
 
     await expect(
       page.getByText(/lost-time incidents/i).first()
     ).toBeVisible();
 
-    await expect(page.getByText(/changeover time/i).first()).toBeVisible();
-
     await expect(
       page.getByText(/ci academy operators trained/i).first()
     ).toBeVisible();
 
-    // KPIs NOT visible at Middleton: IP1.2, IP1.3, IP1.6
+    // KPIs NOT visible at Middleton: IP1.2, IP1.3, IP1.5, IP1.6
+    // IP1.5 (changeover time) links to FB-1.4 which is at Bedford & Corby
     await expect(page.getByText(/oee.*foam-making lines/i)).not.toBeVisible();
     await expect(page.getByText(/mattress otd/i)).not.toBeVisible();
+    await expect(page.getByText(/changeover time/i)).not.toBeVisible();
     await expect(page.getByText(/poznan line utilisation/i)).not.toBeVisible();
   });
 });
