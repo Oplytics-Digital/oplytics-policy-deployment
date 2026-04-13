@@ -111,6 +111,20 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
+            {/* Service Hub — top of sidebar */}
+            <SidebarMenu className="px-2 pt-2 pb-1">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => { window.location.href = "https://portal.oplytics.digital/app"; }}
+                  tooltip="Back to Service Hub"
+                  className="h-10 transition-all font-normal text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Service Hub</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+
             {/* Main navigation */}
             <div className="px-4 py-2">
               {!isCollapsed && (
@@ -190,23 +204,12 @@ function PolicyDeploymentSidebar({ children }: { children: React.ReactNode }) {
                   <span>Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => { window.location.href = "https://portal.oplytics.digital/app"; }}
-                  tooltip="Back to Service Hub"
-                  className="h-10 transition-all font-normal text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Service Hub</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
       </Sidebar>
 
       <SidebarInset>
         <SharedPageHeader
-          serviceName={activeMenuItem?.label ?? "Policy Deployment"}
           serviceIcon={<FileStack className="h-4 w-4" />}
           showHierarchy={true}
           hierarchyMaxDepth={5}

@@ -72,7 +72,7 @@ export default function Dashboard() {
           <p className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
             ■ Strategy Deployment
           </p>
-          <h2 className="text-2xl font-black text-white" style={{ fontFamily: 'Montserrat' }}>{plan.title}</h2>
+          <h2 className="text-lg font-black text-white tracking-wide" style={{ fontFamily: 'Montserrat' }}>{plan.title}</h2>
           <p className="text-white/50 mt-1 text-sm">Strategic deployment overview for {plan.year}</p>
           <div className="flex items-center gap-4 mt-5 flex-wrap">
             {[
