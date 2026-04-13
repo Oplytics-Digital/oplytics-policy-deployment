@@ -31,6 +31,8 @@ export interface Project {
   startDate: string;
   endDate: string;
   category: SqdcpPillar;
+  cascadeScope?: 'enterprise' | 'bu' | 'site' | 'area' | 'asset';
+  scopeEntityIds?: number[];
 }
 
 export interface KPI {
