@@ -353,37 +353,8 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
   const isDbBacked = dbPlan !== null;
   const isLoading = plansQuery.isLoading || fullPlanQuery.isLoading;
 
-  // Toggle correlation via tRPC mutation
-  const toggleMutation = trpc.policy.toggleCorrelation.useMutation({
-    onSuccess: () => {
-      fullPlanQuery.refetch();
-    },
-  });
-
+  // Toggle correlation — local state only (toggleCorrelation procedure removed from router)
   const toggleCorrelation = useCallback((sourceId: string, targetId: string, quadrant: Correlation['quadrant']) => {
-    if (isDbBacked && activePlanId) {
-      // Parse IDs back to DB format
-      const parseId = (prefixedId: string) => {
-        const parts = prefixedId.split('-');
-        return parseInt(parts[parts.length - 1], 10);
-      };
-      const typeMap: Record<string, string> = { bo: 'bo', ao: 'ao', p: 'project', kpi: 'kpi' };
-      const getType = (prefixedId: string) => {
-        const prefix = prefixedId.split('-')[0];
-        return typeMap[prefix] ?? prefix;
-      };
-
-      toggleMutation.mutate({
-        planId: activePlanId,
-        sourceId: parseId(sourceId),
-        targetId: parseId(targetId),
-        sourceType: getType(sourceId) as any,
-        targetType: getType(targetId) as any,
-        quadrant,
-      });
-    }
-
-    // Also update local state for immediate feedback
     setPlan((prev: PolicyPlan) => {
       const existing = prev.correlations.find(
         (c: Correlation) => c.sourceId === sourceId && c.targetId === targetId && c.quadrant === quadrant
@@ -411,7 +382,7 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
         )
       };
     });
-  }, [isDbBacked, activePlanId, toggleMutation]);
+  }, []);
 
   const refetch = useCallback(() => {
     plansQuery.refetch();
