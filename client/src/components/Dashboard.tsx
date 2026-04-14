@@ -4,7 +4,7 @@
  */
 import { usePolicy } from '@/contexts/PolicyContext';
 import { getStatusColor } from '@/lib/store';
-import { Target, Users, FolderKanban, BarChart3 } from 'lucide-react';
+import { Target, Users, FolderKanban, BarChart3, FileX2 } from 'lucide-react';
 
 function KPIGauge({ kpi }: { kpi: { name: string; current: number; target: number; unit: string; direction: 'up' | 'down' } }) {
   const pct = kpi.direction === 'up'
@@ -42,6 +42,17 @@ function KPIGauge({ kpi }: { kpi: { name: string; current: number; target: numbe
 
 export default function Dashboard() {
   const { plan } = usePolicy();
+
+  if (!plan) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <FileX2 className="w-12 h-12 mb-4" style={{ color: '#596475' }} />
+        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2" style={{ fontFamily: 'Montserrat' }}>No Policy Plan</h2>
+        <p className="text-sm text-[#596475] max-w-md">No strategic policy plan exists for this enterprise yet. Create a plan in the portal to get started.</p>
+      </div>
+    );
+  }
+
   const { projects, kpis, breakthroughObjectives: bos, teamMembers } = plan;
 
   const statusCounts = {
