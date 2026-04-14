@@ -4,10 +4,21 @@
  */
 import { usePolicy } from '@/contexts/PolicyContext';
 import { getCategoryColor } from '@/lib/store';
-import { ChevronRight, Target, Crosshair, FolderKanban, BarChart3, ArrowDown } from 'lucide-react';
+import { ChevronRight, Target, Crosshair, FolderKanban, BarChart3, ArrowDown, FileX2 } from 'lucide-react';
 
 export default function Catchball() {
   const { plan } = usePolicy();
+
+  if (!plan) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <FileX2 className="w-12 h-12 mb-4" style={{ color: '#596475' }} />
+        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2" style={{ fontFamily: 'Montserrat' }}>No Policy Plan</h2>
+        <p className="text-sm text-[#596475] max-w-md">No strategic policy plan exists for this enterprise yet. Create a plan in the portal to get started.</p>
+      </div>
+    );
+  }
+
   const { breakthroughObjectives: bos, annualObjectives: aos, projects, kpis, correlations } = plan;
 
   const getLinkedAOs = (boId: string) => {

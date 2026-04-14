@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
-import { samplePlan, type PolicyPlan, type Correlation } from '@/lib/store';
+import { type PolicyPlan, type Correlation } from '@/lib/store';
 import { useHierarchy } from './HierarchyContext';
 
 interface PolicyContextType {
-  /** The full (unfiltered) plan from the DB or sample data */
-  fullPlan: PolicyPlan;
-  /** The plan filtered by the current hierarchy selection (site/BU) */
-  plan: PolicyPlan;
+  /** The full (unfiltered) plan from the DB, or null if no plan exists */
+  fullPlan: PolicyPlan | null;
+  /** The plan filtered by the current hierarchy selection (site/BU), or null */
+  plan: PolicyPlan | null;
   planId: number | null;
   isLoading: boolean;
   isDbBacked: boolean;
@@ -15,7 +15,7 @@ interface PolicyContextType {
   isFiltered: boolean;
   /** The selected site IDs used for filtering (empty = no filter) */
   activeSiteIds: number[];
-  setPlan: React.Dispatch<React.SetStateAction<PolicyPlan>>;
+  setPlan: React.Dispatch<React.SetStateAction<PolicyPlan | null>>;
   toggleCorrelation: (sourceId: string, targetId: string, quadrant: Correlation['quadrant']) => void;
   highlightedIds: string[];
   setHighlightedIds: (ids: string[]) => void;
@@ -208,7 +208,7 @@ export function filterPlanBySiteIds(
 }
 
 export function PolicyProvider({ children }: { children: React.ReactNode }) {
-  const [plan, setPlan] = useState<PolicyPlan>(samplePlan);
+  const [plan, setPlan] = useState<PolicyPlan | null>(null);
   const [highlightedIds, setHighlightedIds] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState('xmatrix');
 
@@ -322,9 +322,9 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
     return dbToUiPlan(merged);
   }, [fullPlanQuery.data, bowlingQuery.data]);
 
-  // Merge DB team members into the plan (fallback to samplePlan.teamMembers)
+  // Merge DB team members into the plan
   const dbTeamMembers = useMemo(() => {
-    if (!teamQuery.data || teamQuery.data.length === 0) return samplePlan.teamMembers;
+    if (!teamQuery.data || teamQuery.data.length === 0) return [];
     return teamQuery.data.map((u: any) => ({
       id: `tm-${u.id}`,
       name: u.name,
@@ -333,9 +333,10 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [teamQuery.data]);
 
-  // Full (unfiltered) plan with team members
-  const fullPlan = useMemo(() => {
+  // Full (unfiltered) plan with team members — null when no plan exists
+  const fullPlan = useMemo((): PolicyPlan | null => {
     const base = dbPlan ?? plan;
+    if (!base) return null;
     return { ...base, teamMembers: dbTeamMembers };
   }, [dbPlan, plan, dbTeamMembers]);
 
@@ -345,7 +346,8 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
   }, [selectedBusinessUnitId]);
 
   // Apply site/BU filtering via cascadeScope on annual objectives
-  const filteredPlan = useMemo(() => {
+  const filteredPlan = useMemo((): PolicyPlan | null => {
+    if (!fullPlan) return null;
     return filterPlanBySiteIds(fullPlan, activeSiteIds, activeBuIds);
   }, [fullPlan, activeSiteIds, activeBuIds]);
 
@@ -355,7 +357,8 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
 
   // Toggle correlation — local state only (toggleCorrelation procedure removed from router)
   const toggleCorrelation = useCallback((sourceId: string, targetId: string, quadrant: Correlation['quadrant']) => {
-    setPlan((prev: PolicyPlan) => {
+    setPlan((prev) => {
+      if (!prev) return prev;
       const existing = prev.correlations.find(
         (c: Correlation) => c.sourceId === sourceId && c.targetId === targetId && c.quadrant === quadrant
       );

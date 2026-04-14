@@ -4,7 +4,7 @@
  */
 import { usePolicy } from '@/contexts/PolicyContext';
 import { getCategoryColor, getStatusColor } from '@/lib/store';
-import { CalendarDays, User, TrendingUp, AlertTriangle, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { CalendarDays, User, TrendingUp, AlertTriangle, CheckCircle2, Clock, XCircle, FileX2 } from 'lucide-react';
 
 function StatusIcon({ status }: { status: string }) {
   switch (status) {
@@ -27,6 +27,17 @@ function getStatusBgDark(status: string): string {
 
 export default function ActionPlans() {
   const { plan } = usePolicy();
+
+  if (!plan) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <FileX2 className="w-12 h-12 mb-4" style={{ color: '#596475' }} />
+        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2" style={{ fontFamily: 'Montserrat' }}>No Policy Plan</h2>
+        <p className="text-sm text-[#596475] max-w-md">No strategic policy plan exists for this enterprise yet. Create a plan in the portal to get started.</p>
+      </div>
+    );
+  }
+
   const { projects, kpis, correlations, annualObjectives } = plan;
 
   const getLinkedKPIs = (projectId: string) => {

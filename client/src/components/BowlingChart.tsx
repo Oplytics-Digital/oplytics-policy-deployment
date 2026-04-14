@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { usePolicy } from '@/contexts/PolicyContext';
+import { FileX2 } from 'lucide-react';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const cellBorder = '1px solid #1e2738';
@@ -25,6 +26,17 @@ function getCellStyle(plan: number, actual: number | null, direction: 'up' | 'do
 
 export default function BowlingChart() {
   const { plan } = usePolicy();
+
+  if (!plan) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <FileX2 className="w-12 h-12 mb-4" style={{ color: '#596475' }} />
+        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2" style={{ fontFamily: 'Montserrat' }}>No Policy Plan</h2>
+        <p className="text-sm text-[#596475] max-w-md">No strategic policy plan exists for this enterprise yet. Create a plan in the portal to get started.</p>
+      </div>
+    );
+  }
+
   const { kpis, bowlingChart } = plan;
 
   return (
