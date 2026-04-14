@@ -32,7 +32,7 @@ export default function ActionPlans() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <FileX2 className="w-12 h-12 mb-4" style={{ color: '#596475' }} />
-        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2" style={{ fontFamily: 'Montserrat' }}>No Policy Plan</h2>
+        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2">No Policy Plan</h2>
         <p className="text-sm text-[#596475] max-w-md">No strategic policy plan exists for this enterprise yet. Create a plan in the portal to get started.</p>
       </div>
     );
@@ -66,7 +66,7 @@ export default function ActionPlans() {
     <div className="w-full">
       {/* Header — Oplytics purple gradient */}
       <div className="px-6 py-3 rounded-t-md" style={{ background: 'linear-gradient(135deg, #8C34E9 0%, #5B1FA6 100%)' }}>
-        <h2 className="text-lg font-black text-white tracking-wide" style={{ fontFamily: 'Montserrat' }}>Action Plans</h2>
+        <h2 className="text-lg font-black text-white tracking-wide">Action Plans</h2>
         <p className="text-sm text-white/60">Project tracking and improvement priorities</p>
       </div>
 
