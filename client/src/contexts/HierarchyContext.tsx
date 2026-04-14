@@ -16,61 +16,27 @@ import {
 } from "@pablo2410/shared-ui/hierarchy";
 
 const STORAGE_KEY = "oplytics-policy-deployment-org-hierarchy";
-const COOKIE_NAME = "oplytics-active-enterprise";
 
 /**
- * Default selection for first-time visitors.
- * Vita Group → ensures the dashboard loads with data immediately.
- */
-const DEFAULT_SELECTION = {
-  enterprise: { id: 1, name: "The Vita Group", code: "VITA" },
-  businessUnit: null,
-  site: null,
-  area: null,
-  asset: null,
-};
-
-/**
- * Read the enterprise override cookie (httpOnly=false, set by portal settings).
- * Returns the enterprise ID or null if not set.
- */
-function readCookieEnterpriseId(): number | null {
-  try {
-    const match = document.cookie
-      .split(";")
-      .map((c) => c.trim())
-      .find((c) => c.startsWith(`${COOKIE_NAME}=`));
-    if (!match) return null;
-    const val = parseInt(match.split("=")[1], 10);
-    return Number.isFinite(val) && val > 0 ? val : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Sync sessionStorage with the enterprise override cookie.
+ * Clear the enterprise selection from sessionStorage on every page load.
  *
- * If the cookie specifies a different enterprise than what's stored in
- * sessionStorage, clear the stored selection so the shared-ui auto-selection
- * effect picks the correct enterprise from the server response.
+ * The server scopes the fullHierarchy response to the user's enterprise
+ * (via JWT or oplytics-active-enterprise cookie override). The shared-ui
+ * auto-selection effect then picks enterprises[0] from the response.
+ *
+ * By clearing the stored enterprise, we ensure auto-selection always fires
+ * and picks the server-authoritative enterprise — no stale sessionStorage.
+ * BU/site selections within the enterprise are preserved.
  */
-function syncSelectionWithCookie() {
+function clearStoredEnterprise() {
   try {
-    const cookieEid = readCookieEnterpriseId();
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) {
       const stored = JSON.parse(raw);
-      const storedEid = stored?.enterprise?.id;
-      if (cookieEid && storedEid && cookieEid !== storedEid) {
-        // Cookie enterprise differs from stored — clear so auto-select fires
-        sessionStorage.removeItem(STORAGE_KEY);
-        return;
+      if (stored?.enterprise) {
+        stored.enterprise = null;
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
       }
-    }
-    // No stored selection — seed with default
-    if (!raw) {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SELECTION));
     }
   } catch {
     // sessionStorage unavailable — shared context will handle gracefully
@@ -78,7 +44,7 @@ function syncSelectionWithCookie() {
 }
 
 // Run immediately on module load (before React renders)
-syncSelectionWithCookie();
+clearStoredEnterprise();
 
 /* ── Instantiate the shared factory ── */
 
