@@ -35,10 +35,13 @@ function BreadcrumbLevel({
   config,
   isLast,
   compact,
+  onClickReset,
 }: {
   config: LevelConfig;
   isLast: boolean;
   compact?: boolean;
+  /** Called when a static (non-dropdown) breadcrumb is clicked to reset child selections */
+  onClickReset?: () => void;
 }) {
   const nodes = config.getNodes();
   const selected = config.getSelected();
@@ -48,20 +51,25 @@ function BreadcrumbLevel({
 
   if (!selected) return null;
 
-  // If only one option or can't switch, show as static text
+  // If only one option or can't switch, show as clickable text that resets child selections
   if (!hasMultiple || !canSwitch) {
+    const isClickable = !!onClickReset && !isLast;
     return (
       <div className="flex items-center gap-1">
-        <div
+        <button
+          type="button"
+          onClick={isClickable ? onClickReset : undefined}
           className={cn(
             "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm",
             "text-[#E2E8F0]",
+            isClickable && "hover:bg-[#1E2738] hover:text-white transition-colors cursor-pointer",
+            !isClickable && "cursor-default",
             compact && "px-1.5 py-0.5 text-xs"
           )}
         >
           <Icon className={cn("shrink-0 text-[#8890A0]", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
           <span className="truncate max-w-[120px]">{selected.name}</span>
-        </div>
+        </button>
         {!isLast && (
           <ChevronRight className={cn("shrink-0 text-[#596475]", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
         )}
@@ -259,14 +267,24 @@ export default function HierarchyNavigator({
       className={cn("flex items-center flex-wrap gap-0.5", className)}
       aria-label="Hierarchy navigation"
     >
-      {selectedLevels.map((level, idx) => (
-        <BreadcrumbLevel
-          key={level.key}
-          config={level}
-          isLast={idx === selectedLevels.length - 1 && !nextLevel}
-          compact={compact}
-        />
-      ))}
+      {selectedLevels.map((level, idx) => {
+        // Build a reset handler that clears all child levels below this one
+        const childLevels = levels.slice(levels.indexOf(level) + 1);
+        const hasChildren = childLevels.some((l) => l.getSelected() !== null);
+        const onClickReset = hasChildren
+          ? () => { for (const cl of childLevels) cl.onSelect(null); }
+          : undefined;
+
+        return (
+          <BreadcrumbLevel
+            key={level.key}
+            config={level}
+            isLast={idx === selectedLevels.length - 1 && !nextLevel}
+            compact={compact}
+            onClickReset={onClickReset}
+          />
+        );
+      })}
       {nextLevel && (
         <DrillDownPrompt
           label={nextLevel.label}
