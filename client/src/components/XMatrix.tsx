@@ -62,7 +62,7 @@ export default function XMatrix() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <FileX2 className="w-12 h-12 mb-4" style={{ color: '#596475' }} />
-        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2" style={{ fontFamily: 'Montserrat' }}>No Policy Plan</h2>
+        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2">No Policy Plan</h2>
         <p className="text-sm text-[#596475] max-w-md">No strategic policy plan exists for this enterprise yet. Create a plan in the portal to get started.</p>
       </div>
     );
@@ -99,7 +99,7 @@ export default function XMatrix() {
     <div className="w-full overflow-auto">
       {/* Title Bar — Oplytics purple gradient */}
       <div className="px-6 py-3 rounded-t-md" style={{ background: 'linear-gradient(135deg, #8C34E9 0%, #5B1FA6 100%)' }}>
-        <h2 className="text-lg font-black text-white tracking-wide" style={{ fontFamily: 'Montserrat' }}>{plan.title}</h2>
+        <h2 className="text-lg font-black text-white tracking-wide">{plan.title}</h2>
         <p className="text-sm text-white/60">Owner: {plan.owner} | Last Updated: {plan.lastUpdated} | Year: {plan.year}</p>
       </div>
 
@@ -109,7 +109,7 @@ export default function XMatrix() {
             {/* Column headers row */}
             <tr>
               <td colSpan={aoCount} style={{ background: headerBg, border: cellBorder }} className="p-1 text-center">
-                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#596475' }}>Tactics</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#596475' }}>Annual Objectives</span>
               </td>
               <td style={{ background: headerBg, border: cellBorder }} className="p-1 text-center">
                 <span className="text-[10px] font-semibold" style={{ color: '#596475' }}>Code</span>
@@ -198,11 +198,11 @@ export default function XMatrix() {
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-xs font-bold uppercase tracking-widest mb-auto mt-3" style={{ color: '#8C34E9' }}>Projects</span>
                     <div className="flex items-center justify-between w-full px-3">
-                      <span className="text-xs font-bold uppercase tracking-widest" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', color: '#1DB8CE' }}>Tactics</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', color: '#1DB8CE' }}>Annual Objectives</span>
                       <span className="text-4xl font-black select-none" style={{ color: 'rgba(140,52,233,0.2)' }}>X</span>
                       <span className="text-xs font-bold uppercase tracking-widest" style={{ writingMode: 'vertical-rl', color: '#1DB8CE' }}>KPIs</span>
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-widest mt-auto mb-3" style={{ color: '#f97316' }}>Results</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest mt-auto mb-3" style={{ color: '#f97316' }}>Breakthrough Objectives (BO)</span>
                   </div>
                 </div>
               </td>

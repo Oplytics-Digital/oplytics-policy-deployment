@@ -1,6 +1,6 @@
 /*
  * Dashboard Component - Oplytics dark theme
- * Dark navy cards, purple/teal accents, Montserrat headings
+ * Dark navy cards, purple/teal accents
  */
 import { usePolicy } from '@/contexts/PolicyContext';
 import { getStatusColor } from '@/lib/store';
@@ -47,7 +47,7 @@ export default function Dashboard() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <FileX2 className="w-12 h-12 mb-4" style={{ color: '#596475' }} />
-        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2" style={{ fontFamily: 'Montserrat' }}>No Policy Plan</h2>
+        <h2 className="text-lg font-semibold text-[#E2E8F0] mb-2">No Policy Plan</h2>
         <p className="text-sm text-[#596475] max-w-md">No strategic policy plan exists for this enterprise yet. Create a plan in the portal to get started.</p>
       </div>
     );
@@ -83,7 +83,7 @@ export default function Dashboard() {
           <p className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
             ■ Strategy Deployment
           </p>
-          <h2 className="text-lg font-black text-white tracking-wide" style={{ fontFamily: 'Montserrat' }}>{plan.title}</h2>
+          <h2 className="text-lg font-black text-white tracking-wide">{plan.title}</h2>
           <p className="text-white/50 mt-1 text-sm">Strategic deployment overview for {plan.year}</p>
           <div className="flex items-center gap-4 mt-5 flex-wrap">
             {[
@@ -93,7 +93,7 @@ export default function Dashboard() {
               { value: bos.length, label: 'Breakthrough Obj.' },
             ].map((stat, i) => (
               <div key={i} className="rounded-md px-4 py-2.5" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Montserrat' }}>{stat.value}</div>
+                <div className="text-2xl font-bold text-white">{stat.value}</div>
                 <div className="text-[10px] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>{stat.label}</div>
               </div>
             ))}
@@ -106,7 +106,7 @@ export default function Dashboard() {
         <div className="rounded-md overflow-hidden" style={cardStyle}>
           <div className="px-4 py-3 flex items-center gap-2" style={cardHeaderStyle}>
             <FolderKanban className="w-4 h-4" style={{ color: '#8C34E9' }} />
-            <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Montserrat' }}>Project Status</h3>
+            <h3 className="text-sm font-bold text-white">Project Status</h3>
           </div>
           <div className="p-4 space-y-3">
             {Object.entries(statusCounts).map(([status, count]) => (
@@ -132,7 +132,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 rounded-md overflow-hidden" style={cardStyle}>
           <div className="px-4 py-3 flex items-center gap-2" style={cardHeaderStyle}>
             <BarChart3 className="w-4 h-4" style={{ color: '#1DB8CE' }} />
-            <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Montserrat' }}>Key Performance Indicators</h3>
+            <h3 className="text-sm font-bold text-white">Key Performance Indicators</h3>
           </div>
           <div className="p-2 flex flex-wrap justify-center">
             {kpis.map(kpi => (
@@ -148,7 +148,7 @@ export default function Dashboard() {
         <div className="rounded-md overflow-hidden" style={cardStyle}>
           <div className="px-4 py-3 flex items-center gap-2" style={cardHeaderStyle}>
             <Target className="w-4 h-4" style={{ color: '#8C34E9' }} />
-            <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Montserrat' }}>Breakthrough Objectives (3-5 Year)</h3>
+            <h3 className="text-sm font-bold text-white">Breakthrough Objectives (3-5 Year)</h3>
           </div>
           <div className="p-4 space-y-2">
             {bos.map(bo => (
@@ -167,7 +167,7 @@ export default function Dashboard() {
         <div className="rounded-md overflow-hidden" style={cardStyle}>
           <div className="px-4 py-3 flex items-center gap-2" style={cardHeaderStyle}>
             <Users className="w-4 h-4" style={{ color: '#1DB8CE' }} />
-            <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Montserrat' }}>Team Members</h3>
+            <h3 className="text-sm font-bold text-white">Team Members</h3>
           </div>
           <div className="p-4 space-y-2">
             {teamMembers.map(member => (
