@@ -124,9 +124,11 @@ test.describe("X-Matrix BU Filtering — Furniture & Bedding", () => {
     // Verify D1 is NOT visible at BU level
     await expect(page.getByText(/grow.*mattress revenue/i)).not.toBeVisible();
 
-    // Navigate back to full enterprise view by reloading the X-Matrix page
-    await page.goto("/xmatrix");
-    await page.waitForLoadState("domcontentloaded");
+    // Click enterprise name in breadcrumb to reset to enterprise-wide view
+    const nav = page.getByLabel("Hierarchy navigation");
+    const enterpriseBtn = nav.locator("button").filter({ hasText: /vita group/i });
+    await expect(enterpriseBtn).toBeVisible();
+    await enterpriseBtn.click();
 
     // In full enterprise view, ALL 5 BOs should be visible again
     await expect(
