@@ -257,7 +257,7 @@ export default function PolicyDeploymentLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuth({ redirectOnUnauthenticated: true });
   const isMobile = useIsMobile();
 
   if (loading) {
